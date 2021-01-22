@@ -42,11 +42,15 @@ void Object::load_object() {
         for (auto & vert : m.Vertices) {
             Eigen::Vector3d point;
             point << vert.Position.X, vert.Position.Y, vert.Position.Z;
-            _mesh.push_back(point);
+            _vertices.push_back(point);
         }
 
-        for (auto & ind : m.Indices) {
-            _indices.push_back(ind);
+        for (int i = 0; i < m.Indices.size(); i += 3) {
+            std::vector<int> face;
+            face.push_back(m.Indices[i+0]);
+            face.push_back(m.Indices[i+1]);
+            face.push_back(m.Indices[i+2]);
+            _faces.push_back(face);
         }
     }
 }
