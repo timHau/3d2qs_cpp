@@ -10,7 +10,13 @@
 class Object
 {
 private:
-    std::vector<double> _bbox;
+    std::string _id;
+    std::string _model_id;
+    std::string _type;
+    std::vector<double> _transform;
+    std::vector<std::vector<double>> _bbox;
+    void load_object();
+
 public:
     Object(nlohmann::json &node);
 };
