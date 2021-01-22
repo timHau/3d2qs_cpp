@@ -2,6 +2,10 @@
 #include "OBJ_Loader.h"
 #include "json.hpp"
 #include "boost/filesystem.hpp"
+#include "Object.h"
+
+using nlohmann::json;
+using nlohmann::basic_json;
 
 int main() {
 
@@ -21,14 +25,19 @@ int main() {
         }
     }
 
-    std::string sceneId = "0004d52d1aeeb8ae6de39d6bd993e992";
-    std::string housePath = "../data/house/" + sceneId + "/house.json";
-    std::ifstream houseStream(housePath);
-    std::string houseJson( (std::istreambuf_iterator<char>(houseStream) ),
-                      (std::istreambuf_iterator<char>() ));
+    std::string scene_id = "0004d52d1aeeb8ae6de39d6bd993e992";
+    std::string house_path = "../data/house/" + scene_id + "/house.json";
+    std::ifstream house_stream(house_path);
+    json j;
+    house_stream >> j;
 
-    auto house = nlohmann::json::parse(houseJson);
-    std::cout << house.dump(4) << std::endl;
+    basic_json levels = j["levels"];
+    for (auto & level : levels) {
+        basic_json nodes = level["nodes"];
+        for (auto & node: nodes) {
+            Object o(node);
+        }
+    }
 
     return 0;
 }
