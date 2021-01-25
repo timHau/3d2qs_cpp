@@ -11,5 +11,5 @@ add_executable(3d2qs_sunc_cpp
         src/main.cpp
         include/OBJ_Loader.h
         include/boost/filesystem.hpp
-        src/Object.h src/Object.cpp include/cpptoml.h src/Object.cpp src/Object.h)
+        src/Object.h src/Object.cpp include/cpptoml.h src/Object.cpp src/Object.h src/MatterportTransformer.cpp src/MatterportTransformer.h src/Utils.h)
 
