@@ -64,8 +64,43 @@ bool Object::is_equal_to(const Object &obj_b) {
     return _bbox == obj_b.get_bbox();
 }
 
-bool Object::is_tangent_to(const Object &obj_b) {
-    return false;
+bool Object::is_tangent_to(const Object &obj_b) const {
+    // test if obj_b bounding box is inside the face of this bounding box
+    const std::vector<Eigen::Vector3d> bbox_a = get_bbox();
+    const std::vector<std::vector<Eigen::Vector3d>> faces = {
+            { bbox_a[0], bbox_a[1], bbox_a[2], bbox_a[3] },  // vorne
+            { bbox_a[3], bbox_a[2], bbox_a[6], bbox_a[7] },  // oben
+            { bbox_a[1], bbox_a[5], bbox_a[6], bbox_a[2] },  // rechts
+            { bbox_a[4], bbox_a[5], bbox_a[1], bbox_a[0] },  // unten
+            { bbox_a[4], bbox_a[0], bbox_a[3], bbox_a[7] },  // links
+            { bbox_a[5], bbox_a[4], bbox_a[7], bbox_a[6] },  // hinten
+    };
+
+    std::vector<Eigen::Vector3d> inside_face;
+    for (const Eigen::Vector3d & v : obj_b.get_bbox()) {
+        for (const std::vector<Eigen::Vector3d> & face : faces) {
+            // test if v is inside face
+            Eigen::Vector3d v_1 = face[0];
+            Eigen::Vector3d v_2 = face[1];
+            Eigen::Vector3d v_3 = face[2];
+            Eigen::Vector3d v_4 = face[3];
+            // project v inside v_2 - v_1 (vector pointing right)
+            Eigen::Vector3d vec_right = v_2 - v_1;
+            double proj_right = v.dot(vec_right);
+            bool t_1 = v_1.dot(vec_right) <= proj_right && proj_right <= v_2.dot(vec_right);
+            // project v inside v_4 - v_1 (vector pointing up)
+            Eigen::Vector3d vec_up = v_4 - v_1;
+            double proj_up = v.dot(vec_up);
+            bool t_2 = v_1.dot(vec_up) <= proj_up && proj_up <= v_4.dot(vec_up);
+            // test if v is inside (proj_right) x (proj_up)
+            if (t_1 && t_2) {
+                inside_face.emplace_back(v);
+            }
+        }
+    }
+
+    // if inside_face is not empty -> there exists point tangent
+    return !inside_face.empty();
 }
 
 std::string Object::relation_to(const Object &obj_b) {

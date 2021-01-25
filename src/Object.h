@@ -20,7 +20,7 @@ private:
     std::vector<std::vector<int>> _faces; // list of list size 3 containing vertex indices
     void load_object();
     bool is_equal_to(const Object& obj_b);
-    bool is_tangent_to(const Object& obj_b);
+    bool is_tangent_to(const Object& obj_b) const;
     std::vector<int> inside_bb(const std::vector<Eigen::Vector3d>& obj_b_bbox) const;
 
 public:
