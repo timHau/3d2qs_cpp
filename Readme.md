@@ -7,3 +7,4 @@
 - https://www.boost.org/
 - https://github.com/nlohmann/json
 - https://gitlab.com/libeigen/eigen.git
+- https://github.com/skystrife/cpptoml
