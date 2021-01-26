@@ -16,7 +16,7 @@ private:
     void init_bbox(const std::shared_ptr<cpptoml::table> &obj);
     bool is_equal_to(Object obj_b);
     [[nodiscard]] bool is_tangent_to(Object& obj_b);
-    std::vector<int> inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox);
+    std::vector<int> is_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox);
 
 public:
     explicit Object(const std::shared_ptr<cpptoml::table> &obj);

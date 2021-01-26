@@ -28,7 +28,7 @@ bool Object::is_equal_to(Object obj_b) {
     return _bbox == *obj_b.get_bbox();
 }
 
-std::vector<int> Object::inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox) {
+std::vector<int> Object::is_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox) {
     // test which points from obj_b bounding box is inside this bounding box, returns indices
 
     // get the points from bottom and top face
@@ -100,25 +100,30 @@ bool Object::is_tangent_to(Object &obj_b) {
             { bbox_a[5], bbox_a[4], bbox_a[7], bbox_a[6] },  // hinten
     };
 
+    std::vector<Eigen::Vector3d> normals = {
+            (bbox_a[2] - bbox_a[1]).cross(bbox_a[0] - bbox_a[1]),
+            (bbox_a[6] - bbox_a[5]).cross(bbox_a[1] - bbox_a[5]),
+            (bbox_a[6] - bbox_a[2]).cross(bbox_a[3] - bbox_a[2]),
+            (bbox_a[0] - bbox_a[1]).cross(bbox_a[5] - bbox_a[1]),
+            (bbox_a[3] - bbox_a[0]).cross(bbox_a[4] - bbox_a[0]),
+            (bbox_a[7] - bbox_a[4]).cross(bbox_a[5] - bbox_a[4]),
+    };
+    for (Eigen::Vector3d v : normals) {
+        v.normalize();
+    }
+
     std::vector<Eigen::Vector3d> inside_face;
     for (const Eigen::Vector3d & v : *obj_b.get_bbox()) {
-        for (const std::vector<Eigen::Vector3d> & face : faces) {
-            // test if v is inside face
-            Eigen::Vector3d v_1 = face[0];
-            Eigen::Vector3d v_2 = face[1];
-            Eigen::Vector3d v_3 = face[2];
-            Eigen::Vector3d v_4 = face[3];
-            // project v inside v_2 - v_1 (vector pointing right)
-            Eigen::Vector3d vec_right = v_2 - v_1;
-            double proj_right = v.dot(vec_right);
-            bool t_1 = v_1.dot(vec_right) <= proj_right && proj_right <= v_2.dot(vec_right);
-            // project v inside v_4 - v_1 (vector pointing up)
-            Eigen::Vector3d vec_up = v_4 - v_1;
-            double proj_up = v.dot(vec_up);
-            bool t_2 = v_1.dot(vec_up) <= proj_up && proj_up <= v_4.dot(vec_up);
-            // test if v is inside (proj_right) x (proj_up)
-            if (t_1 && t_2) {
-                inside_face.emplace_back(v);
+        for (int i = 0; i < faces.size(); ++i) {
+            std::vector<Eigen::Vector3d> face = faces[i];
+            // get point that is on face
+            Eigen::Vector3d a = face[0];
+            // get vector from that point to the point that is tested
+            Eigen::Vector3d b = (a - v);
+            // test if this vector is one the plane <==>  <(a-v), normal> = 0
+            bool is_inside = b.dot(normals[i]);
+            if (is_inside) {
+                inside_face.emplace_back(i);
             }
         }
     }
@@ -134,7 +139,7 @@ std::string Object::relation_to(Object obj_b) {
     }
 
     // indices from obj_b that are inside this bounding box
-    std::vector<int> inside_indices = inside_bb(*obj_b.get_bbox());
+    std::vector<int> inside_indices = is_inside_bb(*obj_b.get_bbox());
 
     // check disjoint
     if (inside_indices.empty()) {
@@ -159,7 +164,7 @@ std::string Object::relation_to(Object obj_b) {
     }
 
     // check if this is contained in obj_b
-    std::vector<int> inside_indices_c = obj_b.inside_bb(*get_bbox());
+    std::vector<int> inside_indices_c = obj_b.is_inside_bb(*get_bbox());
     if (inside_indices_c.size() == 8){
         if (is_equal_to(obj_b))  {
             return "TPP";
