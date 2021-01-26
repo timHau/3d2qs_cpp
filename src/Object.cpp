@@ -121,7 +121,7 @@ bool Object::is_tangent_to(Object &obj_b) {
             // get vector from that point to the point that is tested
             Eigen::Vector3d b = (a - v);
             // test if this vector is one the plane <==>  <(a-v), normal> = 0
-            bool is_inside = b.dot(normals[i]);
+            bool is_inside = b.dot(normals[i]) == 0;
             if (is_inside) {
                 inside_face.emplace_back(i);
             }
@@ -148,7 +148,7 @@ std::string Object::relation_to(Object obj_b) {
 
     // check for partial intersection
     if (!inside_indices.empty() && inside_indices.size() < 8) {
-        if (is_equal_to(obj_b)) {
+        if (is_tangent_to(obj_b)) {
             return "EC";
         } else {
             return "PO";
@@ -166,7 +166,7 @@ std::string Object::relation_to(Object obj_b) {
     // check if this is contained in obj_b
     std::vector<int> inside_indices_c = obj_b.is_inside_bb(*get_bbox());
     if (inside_indices_c.size() == 8){
-        if (is_equal_to(obj_b))  {
+        if (is_tangent_to(obj_b))  {
             return "TPP";
         }
         return "NTPP";

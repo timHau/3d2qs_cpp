@@ -3,13 +3,18 @@
 #include "Object.h"
 #include "Utils.h"
 #include "SUNCTransformer.h"
+#include "MatterportTransformer.h"
 
 
 int main() {
+    // TODO make os independent
     // load house.json
     std::string scene_id = "0004d52d1aeeb8ae6de39d6bd993e992";
     std::string house_path = "../data/house/" + scene_id + "/house.json";
-    SUNCTransformer::transform(house_path);
+    // SUNCTransformer::transform(house_path);
+
+    MatterportTransformer::transform("../data/region_segmentations/");
+
 
     auto config = cpptoml::parse_file("../data/test.toml");
     auto val = config->get_qualified_as<std::string>("dataset.name");

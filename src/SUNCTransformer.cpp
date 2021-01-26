@@ -63,13 +63,12 @@ void SUNCTransformer::transform(const std::string &path) {
                     bbox_array->push_back(row_array);
                 }
 
-
                 // parse nodes to one toml file
-                auto node_table = cpptoml::make_table();
-                node_table->insert("bbox", bbox_array);
+                auto object_table = cpptoml::make_table();
+                object_table->insert("bbox", bbox_array);
                 // TODO replace modelId by true label
-                node_table->insert("label", node["modelId"]);
-                object_table_array->push_back(node_table);
+                object_table->insert("label", node["modelId"]);
+                object_table_array->push_back(object_table);
             }
         }
     }
