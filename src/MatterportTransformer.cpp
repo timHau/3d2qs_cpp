@@ -22,7 +22,7 @@ void MatterportTransformer::transform(const std::string &path) {
     happly::PLYData ply_file(path + "region17.ply");
     std::vector<double> vert_x = ply_file.getElement("vertex").getProperty<double>("x");
     std::vector<double> vert_y = ply_file.getElement("vertex").getProperty<double>("y");
-    std::vector<double> vert_z = ply_file.getElement("vertex").getProperty<double>("y");
+    std::vector<double> vert_z = ply_file.getElement("vertex").getProperty<double>("z");
     std::vector<std::vector<int>> vertex_indices = ply_file.getElement("face").getListProperty<int>("vertex_indices");
 
     // every entry in the array 'segIndices' corresponds to one face
