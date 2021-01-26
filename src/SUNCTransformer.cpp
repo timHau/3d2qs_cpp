@@ -1,7 +1,3 @@
-//
-// Created by tim on 25.01.21.
-//
-
 #include "SUNCTransformer.h"
 
 void SUNCTransformer::transform(const std::string &path) {

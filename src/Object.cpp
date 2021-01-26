@@ -1,7 +1,3 @@
-//
-// Created by tim on 25.01.21.
-//
-
 #include <iostream>
 #include "Object.h"
 
@@ -20,15 +16,19 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
     }
 }
 
-std::vector<Eigen::Vector3d> * Object::get_bbox() {
+std::vector<Eigen::Vector3d> *Object::get_bbox() {
     return &_bbox;
+}
+
+std::string *Object::get_label() {
+    return &_label;
 }
 
 bool Object::is_equal_to(Object obj_b) {
     return _bbox == *obj_b.get_bbox();
 }
 
-std::vector<int> Object::is_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox) {
+std::vector<int> Object::is_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox) {
     // test which points from obj_b bounding box is inside this bounding box, returns indices
 
     // get the points from bottom and top face
@@ -63,7 +63,7 @@ std::vector<int> Object::is_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox) 
     // direction vectors from center to points of bounding box
     std::vector<Eigen::Vector3d> dir_vecs;
     dir_vecs.reserve(obj_b_bbox.size());
-    for (const Eigen::Vector3d & v : obj_b_bbox) {
+    for (const Eigen::Vector3d &v : obj_b_bbox) {
         dir_vecs.emplace_back(v - cuboid_center);
     }
 
@@ -92,12 +92,12 @@ bool Object::is_tangent_to(Object &obj_b) {
     // test if obj_b bounding box is inside the face of this bounding box
     std::vector<Eigen::Vector3d> bbox_a = *get_bbox();
     const std::vector<std::vector<Eigen::Vector3d>> faces = {
-            { bbox_a[0], bbox_a[1], bbox_a[2], bbox_a[3] },  // vorne
-            { bbox_a[3], bbox_a[2], bbox_a[6], bbox_a[7] },  // oben
-            { bbox_a[1], bbox_a[5], bbox_a[6], bbox_a[2] },  // rechts
-            { bbox_a[4], bbox_a[5], bbox_a[1], bbox_a[0] },  // unten
-            { bbox_a[4], bbox_a[0], bbox_a[3], bbox_a[7] },  // links
-            { bbox_a[5], bbox_a[4], bbox_a[7], bbox_a[6] },  // hinten
+            {bbox_a[0], bbox_a[1], bbox_a[2], bbox_a[3]},  // vorne
+            {bbox_a[3], bbox_a[2], bbox_a[6], bbox_a[7]},  // oben
+            {bbox_a[1], bbox_a[5], bbox_a[6], bbox_a[2]},  // rechts
+            {bbox_a[4], bbox_a[5], bbox_a[1], bbox_a[0]},  // unten
+            {bbox_a[4], bbox_a[0], bbox_a[3], bbox_a[7]},  // links
+            {bbox_a[5], bbox_a[4], bbox_a[7], bbox_a[6]},  // hinten
     };
 
     std::vector<Eigen::Vector3d> normals = {
@@ -113,7 +113,7 @@ bool Object::is_tangent_to(Object &obj_b) {
     }
 
     std::vector<Eigen::Vector3d> inside_face;
-    for (const Eigen::Vector3d & v : *obj_b.get_bbox()) {
+    for (const Eigen::Vector3d &v : *obj_b.get_bbox()) {
         for (int i = 0; i < faces.size(); ++i) {
             std::vector<Eigen::Vector3d> face = faces[i];
             // get point that is on face
@@ -165,8 +165,8 @@ std::string Object::relation_to(Object obj_b) {
 
     // check if this is contained in obj_b
     std::vector<int> inside_indices_c = obj_b.is_inside_bb(*get_bbox());
-    if (inside_indices_c.size() == 8){
-        if (is_tangent_to(obj_b))  {
+    if (inside_indices_c.size() == 8) {
+        if (is_tangent_to(obj_b)) {
             return "TPP";
         }
         return "NTPP";

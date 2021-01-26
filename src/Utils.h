@@ -1,7 +1,3 @@
-//
-// Created by tim on 25.01.21.
-//
-
 #ifndef INC_3D2QS_SUNC_CPP_UTILS_H
 #define INC_3D2QS_SUNC_CPP_UTILS_H
 

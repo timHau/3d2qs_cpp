@@ -1,7 +1,3 @@
-//
-// Created by tim on 26.01.21.
-//
-
 #include "MatterportTransformer.h"
 
 struct FACE {
@@ -103,5 +99,9 @@ void MatterportTransformer::transform(const std::string &path) {
     meta_table->insert("name", "Matterport3d");
     root->insert("dataset", meta_table);
 
-    std::cout << (*root);
+    std::ofstream output;
+    output.open("../data/matterport.toml");
+    output << (*root);
+    output.close();
+    std::cout << "wrote matterport.toml";
 }
