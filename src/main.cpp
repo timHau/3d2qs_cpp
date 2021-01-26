@@ -23,7 +23,7 @@ int main() {
         Object obj_a = obj_pair.first;
         Object obj_b = obj_pair.second;
         std::string rel = obj_a.relation_to(obj_b);
-        std::cout << rel << std::endl;
+        // std::cout << rel << std::endl;
     }
 
     return 0;

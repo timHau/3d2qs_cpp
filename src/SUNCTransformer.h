@@ -6,6 +6,11 @@
 #define INC_3D2QS_SUNC_CPP_SUNCTRANSFORMER_H
 
 #include <iostream>
+#include <fstream>
+#include "json.hpp"
+#include "cpptoml.h"
+#include <Eigen/Dense>
+
 
 class SUNCTransformer {
 public:
