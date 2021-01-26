@@ -2,14 +2,14 @@
 #include "cpptoml.h"
 #include "Object.h"
 #include "Utils.h"
-#include "MatterportTransformer.h"
+#include "SUNCTransformer.h"
 
 
 int main() {
     // load house.json
     std::string scene_id = "0004d52d1aeeb8ae6de39d6bd993e992";
     std::string house_path = "../data/house/" + scene_id + "/house.json";
-    MatterportTransformer::transform(house_path);
+    SUNCTransformer::transform(house_path);
 
     auto config = cpptoml::parse_file("../data/test.toml");
     auto val = config->get_qualified_as<std::string>("dataset.name");
