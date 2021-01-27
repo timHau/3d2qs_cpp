@@ -141,18 +141,20 @@ std::string Object::relation_to(Object obj_b) {
     // indices from obj_b that are inside this bounding box
     std::vector<int> inside_indices = is_inside_bb(*obj_b.get_bbox());
 
-    // check disjoint
-    if (inside_indices.empty()) {
-        return "DC";
-    }
-
     // check for partial intersection
     if (!inside_indices.empty() && inside_indices.size() < 8) {
-        if (is_tangent_to(obj_b)) {
+        // TODO check this
+        // if (is_tangent_to(obj_b)) {
+        if (is_equal_to(obj_b)) {
             return "EC";
         } else {
             return "PO";
         }
+    }
+
+    // check disjoint
+    if (inside_indices.empty()) {
+        return "DC";
     }
 
     // check obj_b contained in this bounding box

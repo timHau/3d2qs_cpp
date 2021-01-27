@@ -62,6 +62,7 @@ void SUNCTransformer::transform(const std::string &path) {
                 // parse nodes to one toml file
                 auto object_table = cpptoml::make_table();
                 object_table->insert("bbox", bbox_array);
+                object_table->insert("id", node["modelId"]);
                 // TODO replace modelId by true label
                 object_table->insert("label", node["modelId"]);
                 object_table_array->push_back(object_table);
@@ -79,5 +80,5 @@ void SUNCTransformer::transform(const std::string &path) {
     output.open("../data/SUNC.toml");
     output << (*root);
     output.close();
-    std::cout << "wrote SUNC.toml";
+    std::cout << "wrote SUNC.toml" << std::endl;
 }

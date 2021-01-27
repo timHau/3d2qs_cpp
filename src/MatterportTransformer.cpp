@@ -7,6 +7,7 @@ struct FACE {
 
 
 void MatterportTransformer::transform(const std::string &path) {
+
     std::ifstream semseg_stream(path + "region17.semseg.json");
     nlohmann::json semseg_json;
     semseg_stream >> semseg_json;
@@ -89,6 +90,7 @@ void MatterportTransformer::transform(const std::string &path) {
 
         auto object_table = cpptoml::make_table();
         object_table->insert("bbox", bbox_array);
+        object_table->insert("id", seg_group["id"]);
         object_table->insert("label", seg_group["label"]);
         object_table_array->push_back(object_table);
     }
@@ -103,5 +105,5 @@ void MatterportTransformer::transform(const std::string &path) {
     output.open("../data/matterport.toml");
     output << (*root);
     output.close();
-    std::cout << "wrote matterport.toml";
+    std::cout << "wrote matterport.toml" << std::endl;
 }
