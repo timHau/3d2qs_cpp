@@ -117,7 +117,13 @@ bool Object::is_tangent_to(Object &obj_b) {
         for (int i = 0; i < faces.size(); ++i) {
             std::vector<Eigen::Vector3d> face = faces[i];
             // get point that is on face
-            Eigen::Vector3d a = face[0];
+            // TODO test this
+            try {
+                Eigen::Vector3d a = face[0];
+            } catch(...) {
+                std::cout << face[0] << std::endl;
+            }
+            /*
             // get vector from that point to the point that is tested
             Eigen::Vector3d b = (a - v);
             // test if this vector is one the plane <==>  <(a-v), normal> = 0
@@ -125,6 +131,7 @@ bool Object::is_tangent_to(Object &obj_b) {
             if (is_inside) {
                 inside_face.emplace_back(i);
             }
+             */
         }
     }
 
@@ -144,8 +151,8 @@ std::string Object::relation_to(Object obj_b) {
     // check for partial intersection
     if (!inside_indices.empty() && inside_indices.size() < 8) {
         // TODO check this
-        // if (is_tangent_to(obj_b)) {
-        if (is_equal_to(obj_b)) {
+        if (is_tangent_to(obj_b)) {
+        // if (is_equal_to(obj_b)) {
             return "EC";
         } else {
             return "PO";

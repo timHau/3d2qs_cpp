@@ -90,7 +90,7 @@ void MatterportTransformer::transform(const std::string &path) {
 
         auto object_table = cpptoml::make_table();
         object_table->insert("bbox", bbox_array);
-        object_table->insert("id", seg_group["id"]);
+        object_table->insert("id", std::to_string((int) seg_group["id"]));
         object_table->insert("label", seg_group["label"]);
         object_table_array->push_back(object_table);
     }
