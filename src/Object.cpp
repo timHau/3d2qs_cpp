@@ -43,13 +43,13 @@ int Object::count_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox) {
     Eigen::Vector3d B = bbox_a[3];
     Eigen::Vector3d C = bbox_a[4];
 
-    Eigen::Vector3d AV = (A-V);
-    Eigen::Vector3d BV = (B-V);
-    Eigen::Vector3d CV = (C-V);
+    Eigen::Vector3d AV = (A - V);
+    Eigen::Vector3d BV = (B - V);
+    Eigen::Vector3d CV = (C - V);
 
     // number of points in obj_bs bounding box that are inside obj_as bounding box
     int count = 0;
-    for (const Eigen::Vector3d & P : obj_b_bbox) {
+    for (const Eigen::Vector3d &P : obj_b_bbox) {
         bool t_1 = V.dot(AV) < P.dot(AV) && P.dot(AV) < A.dot(AV);
         bool t_2 = V.dot(BV) < P.dot(BV) && P.dot(BV) < B.dot(BV);
         bool t_3 = V.dot(CV) < P.dot(CV) && P.dot(CV) < C.dot(CV);
@@ -80,33 +80,27 @@ bool Object::is_tangent_to(Object &obj_b) {
             (bbox_a[3] - bbox_a[0]).cross(bbox_a[4] - bbox_a[0]),
             (bbox_a[7] - bbox_a[4]).cross(bbox_a[5] - bbox_a[4]),
     };
-    for (Eigen::Vector3d v : normals) {
-        v.normalize();
+    for (Eigen::Vector3d &normal : normals) {
+        normal = normal.normalized();
     }
 
-    std::vector<Eigen::Vector3d> inside_face;
+    bool is_inside;
     for (const Eigen::Vector3d &v : *obj_b.get_bbox()) {
         for (int i = 0; i < faces.size(); ++i) {
             std::vector<Eigen::Vector3d> face = faces[i];
             // get point that is on face
-            // TODO test this
-            try {
-                Eigen::Vector3d a = face[0];
-                // get vector from that point to the point that is tested
-                Eigen::Vector3d b = (a - v);
-                // test if this vector is one the plane <==>  <(a-v), normal> = 0
-                bool is_inside = b.dot(normals[i]) == 0;
-                if (is_inside) {
-                    inside_face.emplace_back(i);
-                }
-            } catch(...) {
-                std::cout << face[0] << std::endl;
+            Eigen::Vector3d a = face[0];
+            // get vector from that point to the point that is tested
+            Eigen::Vector3d b = (a - v);
+            // test if this vector is one the plane <==>  <(a-v), normal> = 0
+            if (b.dot(normals[i]) == 0) {
+                is_inside = true;
+                break;
             }
         }
     }
 
-    // if inside_face is not empty -> there exists point tangent
-    return !inside_face.empty();
+    return is_inside;
 }
 
 std::string Object::relation_to(Object obj_b) {

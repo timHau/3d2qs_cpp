@@ -33,8 +33,8 @@ int main() {
     }
     */
 
-    Object obj_a = objects[77];
-    Object obj_b = objects[75];
+    Object obj_a = objects[8];
+    Object obj_b = objects[21];
     std::string rel = obj_a.relation_to(obj_b);
     std::cout << *obj_a.get_label() << " with id: " << *obj_a.get_id() << " is in " << rel << " relation with "
               << *obj_b.get_label() << " with id: " << *obj_b.get_id() << std::endl;
