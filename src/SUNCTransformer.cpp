@@ -33,17 +33,17 @@ void SUNCTransformer::transform(const std::string &path) {
                     std::vector<double> t = node["transform"];
                     // transform is column major
                     Eigen::Matrix4d transform;
-                    transform << t[0],  t[4],  t[8],  t[12],
-                                 t[1],  t[5],  t[9],  t[13],
-                                 t[2],  t[6],  t[10], t[14],
-                                 t[3],  t[7],  t[11], t[15];
+                    transform << t[0], t[4], t[8], t[12],
+                            t[1], t[5], t[9], t[13],
+                            t[2], t[6], t[10], t[14],
+                            t[3], t[7], t[11], t[15];
 
                     std::vector<Eigen::Vector3d> transformed_bbox;
                     // convert bbox vectors into homogenous coordinates, transform there and convert back
-                    for (auto & v : bbox) {
+                    for (auto &v : bbox) {
                         Eigen::Vector4d hom;
                         hom << v, 1.0;
-                        hom = transform*hom;
+                        hom = transform * hom;
                         transformed_bbox.emplace_back(hom.head<3>());
                     }
 

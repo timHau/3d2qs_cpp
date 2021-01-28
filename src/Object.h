@@ -7,6 +7,7 @@
 class Object {
 private:
     std::string _label;
+    std::string _id;
     std::vector<Eigen::Vector3d> _bbox;
 
     void init_bbox(const std::shared_ptr<cpptoml::table> &obj);
@@ -15,7 +16,7 @@ private:
 
     [[nodiscard]] bool is_tangent_to(Object &obj_b);
 
-    std::vector<int> is_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox);
+    int count_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox);
 
 public:
     explicit Object(const std::shared_ptr<cpptoml::table> &obj);
@@ -23,6 +24,8 @@ public:
     std::vector<Eigen::Vector3d> *get_bbox();
 
     std::string *get_label();
+
+    std::string *get_id();
 
     std::string relation_to(Object obj_b);
 };

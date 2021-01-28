@@ -3,6 +3,7 @@
 
 Object::Object(const std::shared_ptr<cpptoml::table> &obj) {
     _label = *(obj->get_qualified_as<std::string>("label"));
+    _id = *(obj->get_qualified_as<std::string>("id"));
     init_bbox(obj);
 }
 
@@ -24,68 +25,39 @@ std::string *Object::get_label() {
     return &_label;
 }
 
+std::string *Object::get_id() {
+    return &_id;
+}
+
 bool Object::is_equal_to(Object obj_b) {
     return _bbox == *obj_b.get_bbox();
 }
 
-std::vector<int> Object::is_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox) {
+int Object::count_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox) {
     // test which points from obj_b bounding box is inside this bounding box, returns indices
 
     // get the points from bottom and top face
     std::vector<Eigen::Vector3d> bbox_a = *get_bbox();
-    Eigen::Vector3d b_1 = bbox_a[0];
-    Eigen::Vector3d b_2 = bbox_a[1];
-    Eigen::Vector3d t_2 = bbox_a[2];
-    Eigen::Vector3d t_1 = bbox_a[3];
-    Eigen::Vector3d b_4 = bbox_a[4];
-    Eigen::Vector3d b_3 = bbox_a[5];
-    Eigen::Vector3d t_3 = bbox_a[6];
-    Eigen::Vector3d t_4 = bbox_a[7];
+    Eigen::Vector3d V = bbox_a[0];
+    Eigen::Vector3d A = bbox_a[1];
+    Eigen::Vector3d B = bbox_a[3];
+    Eigen::Vector3d C = bbox_a[4];
 
-    // find normalized direction from bottom to top
-    Eigen::Vector3d dir_1 = (t_1 - b_1);
-    float size_1 = dir_1.norm();
-    dir_1.normalize();
+    Eigen::Vector3d AV = (A-V);
+    Eigen::Vector3d BV = (B-V);
+    Eigen::Vector3d CV = (C-V);
 
-    // find normalized direction from left to right
-    Eigen::Vector3d dir_2 = (b_2 - b_1);
-    float size_2 = dir_2.norm();
-    dir_2.normalize();
-
-    // find normalized direction from front to back
-    Eigen::Vector3d dir_3 = (b_4 - b_1);
-    float size_3 = dir_3.norm();
-    dir_3.normalize();
-
-    // find center of bounding box
-    Eigen::Vector3d cuboid_center = 1 / 2 * (b_2 + b_4 + t_1 - b_1);
-
-    // direction vectors from center to points of bounding box
-    std::vector<Eigen::Vector3d> dir_vecs;
-    dir_vecs.reserve(obj_b_bbox.size());
-    for (const Eigen::Vector3d &v : obj_b_bbox) {
-        dir_vecs.emplace_back(v - cuboid_center);
-    }
-
-    std::vector<int> outside;
-    for (int i = 0; i < dir_vecs.size(); ++i) {
-        Eigen::Vector3d dir_vec = dir_vecs[i];
-        auto res_1 = abs(dir_vec.dot(dir_1) * 2);
-        auto res_2 = abs(dir_vec.dot(dir_2) * 2);
-        auto res_3 = abs(dir_vec.dot(dir_3) * 2);
-        if (res_1 > size_1 && res_2 > size_2 && res_3 > size_3) {
-            // point is outside
-            outside.emplace_back(i);
+    // number of points in obj_bs bounding box that are inside obj_as bounding box
+    int count = 0;
+    for (const Eigen::Vector3d & P : obj_b_bbox) {
+        bool t_1 = V.dot(AV) < P.dot(AV) && P.dot(AV) < A.dot(AV);
+        bool t_2 = V.dot(BV) < P.dot(BV) && P.dot(BV) < B.dot(BV);
+        bool t_3 = V.dot(CV) < P.dot(CV) && P.dot(CV) < C.dot(CV);
+        if (t_1 && t_2 && t_3) {
+            count += 1;
         }
     }
-
-    // get indices of points inside
-    const std::vector<int> indices = {1, 2, 3, 4, 5, 6, 7, 8};
-    std::vector<int> diff;
-    std::set_difference(indices.begin(), indices.end(), outside.begin(), outside.end(),
-                        std::inserter(diff, diff.begin()));
-
-    return diff;
+    return count;
 }
 
 bool Object::is_tangent_to(Object &obj_b) {
@@ -120,18 +92,16 @@ bool Object::is_tangent_to(Object &obj_b) {
             // TODO test this
             try {
                 Eigen::Vector3d a = face[0];
+                // get vector from that point to the point that is tested
+                Eigen::Vector3d b = (a - v);
+                // test if this vector is one the plane <==>  <(a-v), normal> = 0
+                bool is_inside = b.dot(normals[i]) == 0;
+                if (is_inside) {
+                    inside_face.emplace_back(i);
+                }
             } catch(...) {
                 std::cout << face[0] << std::endl;
             }
-            /*
-            // get vector from that point to the point that is tested
-            Eigen::Vector3d b = (a - v);
-            // test if this vector is one the plane <==>  <(a-v), normal> = 0
-            bool is_inside = b.dot(normals[i]) == 0;
-            if (is_inside) {
-                inside_face.emplace_back(i);
-            }
-             */
         }
     }
 
@@ -145,14 +115,12 @@ std::string Object::relation_to(Object obj_b) {
         return "EQ";
     }
 
-    // indices from obj_b that are inside this bounding box
-    std::vector<int> inside_indices = is_inside_bb(*obj_b.get_bbox());
+    // number of points from obj_b that are inside this bounding box
+    int inside_count = count_inside_bb(*obj_b.get_bbox());
 
     // check for partial intersection
-    if (!inside_indices.empty() && inside_indices.size() < 8) {
-        // TODO check this
+    if (0 < inside_count && inside_count < 8) {
         if (is_tangent_to(obj_b)) {
-        // if (is_equal_to(obj_b)) {
             return "EC";
         } else {
             return "PO";
@@ -160,12 +128,12 @@ std::string Object::relation_to(Object obj_b) {
     }
 
     // check disjoint
-    if (inside_indices.empty()) {
+    if (inside_count == 0) {
         return "DC";
     }
 
     // check obj_b contained in this bounding box
-    if (inside_indices.size() == 8) {
+    if (inside_count == 8) {
         if (is_tangent_to(obj_b)) {
             return "TPPc";
         }
@@ -173,8 +141,8 @@ std::string Object::relation_to(Object obj_b) {
     }
 
     // check if this is contained in obj_b
-    std::vector<int> inside_indices_c = obj_b.is_inside_bb(*get_bbox());
-    if (inside_indices_c.size() == 8) {
+    int inside_count_c = obj_b.count_inside_bb(*get_bbox());
+    if (inside_count_c == 8) {
         if (is_tangent_to(obj_b)) {
             return "TPP";
         }
