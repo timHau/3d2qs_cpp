@@ -2,8 +2,8 @@
 #include "cpptoml.h"
 #include "Object.h"
 #include "Utils.h"
-#include "SUNCTransformer.h"
-#include "MatterportTransformer.h"
+#include "Transformer/SUNCTransformer.h"
+#include "Transformer/MatterportTransformer.h"
 
 
 int main() {
