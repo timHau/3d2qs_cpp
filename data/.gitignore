@@ -3,3 +3,4 @@
 !.gitignore
 !*.toml
 !3d_objects_debug
+!data_files

@@ -101,7 +101,7 @@ void MatterportTransformer::transform(const std::string &path) {
     root->insert("dataset", meta_table);
 
     std::ofstream output;
-    output.open("../data/matterport3d.toml");
+    output.open("../data/data_files/matterport3d.toml");
     output << (*root);
     output.close();
     std::cout << "wrote matterport3d.toml" << std::endl;
