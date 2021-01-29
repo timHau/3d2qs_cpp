@@ -92,10 +92,23 @@ bool Object::is_tangent_to(Object &obj_b) {
             // get point that is on face
             Eigen::Vector3d a = face[0];
             // get vector from that point to the point that is tested
-            Eigen::Vector3d b = (a - v);
+            Eigen::Vector3d av = (a - v);
             // test if this vector is one the plane <==>  <(a-v), normal> = 0
-            if (b.dot(normals[i]) == 0) {
-                is_inside = true;
+            bool is_inside_plane = false;
+            if (av.dot(normals[i]) == 0) {
+                is_inside_plane = true;
+            }
+
+            if (is_inside_plane) {
+                Eigen::Vector3d b = face[1];
+                Eigen::Vector3d c = face[2];
+                Eigen::Vector3d ab = (a-b);
+                Eigen::Vector3d cb = (c-b);
+                bool t_1 = b.dot(ab) < v.dot(ab) && v.dot(ab) < a.dot(ab);
+                bool t_2 = b.dot(cb) < v.dot(cb) && v.dot(cb) < c.dot(cb);
+                if (t_1 && t_2) {
+                    is_inside = true;
+                }
             }
         }
     }
