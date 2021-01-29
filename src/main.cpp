@@ -2,8 +2,10 @@
 #include "cpptoml.h"
 #include "Object.h"
 #include "Utils.h"
+
 #include "Transformer/SUNCTransformer.h"
 #include "Transformer/MatterportTransformer.h"
+#include "Exporter.h"
 
 
 int main() {
@@ -23,6 +25,9 @@ int main() {
         objects.emplace_back(object);
     }
 
+    Exporter::to_ply("../data/matterport.toml");
+
+    /*
     for (auto &obj_pair : utils::cartesian_product(objects, objects)) {
         Object obj_a = obj_pair.first;
         Object obj_b = obj_pair.second;
