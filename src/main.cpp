@@ -32,15 +32,12 @@ int main() {
     }
 
     /*
-    Object obj_a = objects[8];
-    Object obj_b = objects[21];
+    Object obj_a = objects[76];
+    Object obj_b = objects[77];
     std::string rel = obj_a.relation_to(obj_b);
     std::cout << *obj_a.get_label() << " with id: " << *obj_a.get_id() << " is in " << rel << " relation with "
               << *obj_b.get_label() << " with id: " << *obj_b.get_id() << std::endl;
-    std::string rel_c = obj_b.relation_to(obj_a);
-    std::cout << *obj_b.get_label() << " with id: " << *obj_b.get_id() << " is in " << rel << " relation with "
-              << *obj_a.get_label() << " with id: " << *obj_a.get_id() << std::endl;
-              */
+    */
 
     return 0;
 }

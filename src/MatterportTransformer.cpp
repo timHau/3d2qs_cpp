@@ -7,7 +7,6 @@ struct FACE {
 
 
 void MatterportTransformer::transform(const std::string &path) {
-
     std::ifstream semseg_stream(path + "region17.semseg.json");
     nlohmann::json semseg_json;
     semseg_stream >> semseg_json;

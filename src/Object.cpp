@@ -62,6 +62,7 @@ int Object::count_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox) {
 
 bool Object::is_tangent_to(Object &obj_b) {
     // test if obj_b bounding box is inside the face of this bounding box
+
     std::vector<Eigen::Vector3d> bbox_a = *get_bbox();
     const std::vector<std::vector<Eigen::Vector3d>> faces = {
             {bbox_a[0], bbox_a[1], bbox_a[2], bbox_a[3]},  // vorne
@@ -84,7 +85,7 @@ bool Object::is_tangent_to(Object &obj_b) {
         normal = normal.normalized();
     }
 
-    bool is_inside;
+    bool is_inside = false;
     for (const Eigen::Vector3d &v : *obj_b.get_bbox()) {
         for (int i = 0; i < faces.size(); ++i) {
             std::vector<Eigen::Vector3d> face = faces[i];
@@ -95,7 +96,6 @@ bool Object::is_tangent_to(Object &obj_b) {
             // test if this vector is one the plane <==>  <(a-v), normal> = 0
             if (b.dot(normals[i]) == 0) {
                 is_inside = true;
-                break;
             }
         }
     }
