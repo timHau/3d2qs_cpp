@@ -10,13 +10,24 @@ mv ./eigen/Eigen .
 rm -rf ./eigen
 ```
 
-then place all the datasets into the data folder. For matterport we need
-- region_segmentations 
-
-For the SUNC data we need:
-- house/<house id>/house.json
-- object/
-- room/<house id>/
+## data folder
+```
+data/
+├── 3d_objects_debug/
+│  ├── matterport3d/
+│  └── sunc/
+│ 
+├── matterport3d/
+│  ├── .gitignore
+│  ├── config/
+│  └── region_segmentations/
+│ 
+└── sunc
+   ├── .gitignore
+   ├── config/
+   ├── house/
+   └── object/
+```
 
 ## dependencies
 - place eigen into include folder 

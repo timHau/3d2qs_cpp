@@ -12,7 +12,7 @@
 
 class Exporter {
 public:
-    static void to_ply(std::string input);
+    static void to_ply(const std::string& input);
 };
 
 

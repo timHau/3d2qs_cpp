@@ -1,6 +1,7 @@
 #include "SUNCTransformer.h"
 
 void SUNCTransformer::transform(const std::string &path) {
+    std::cout << "start parsing sunc data" << std::endl;
     // path is path to house.json
     std::ifstream house_stream(path);
     nlohmann::json j;
@@ -77,7 +78,7 @@ void SUNCTransformer::transform(const std::string &path) {
     root->insert("dataset", meta_table);
 
     std::ofstream output;
-    output.open("../data/SUNC.toml");
+    output.open("../data/sunc/config/sunc.toml");
     output << (*root);
     output.close();
     std::cout << "wrote SUNC.toml" << std::endl;

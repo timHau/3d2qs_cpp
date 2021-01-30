@@ -4,7 +4,7 @@
 
 #include "Exporter.h"
 
-void Exporter::to_ply(std::string input) {
+void Exporter::to_ply(const std::string& input) {
     // read .toml file and write them into an .ply file. Useful for debugging
 
     auto config = cpptoml::parse_file(input);

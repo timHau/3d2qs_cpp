@@ -12,12 +12,12 @@ int main() {
     // TODO make os independent
     // load house.json
     std::string scene_id = "0004d52d1aeeb8ae6de39d6bd993e992";
-    std::string house_path = "../data/house/" + scene_id + "/house.json";
+    std::string house_path = "../data/sunc/house/" + scene_id + "/house.json";
 
     SUNCTransformer::transform(house_path);
-    // MatterportTransformer::transform("../data/region_segmentations/");
+    MatterportTransformer::transform("../data/matterport3d/region_segmentations/");
 
-    auto config = cpptoml::parse_file("../data/data_files/matterport3d.toml");
+    auto config = cpptoml::parse_file("../data/matterport3d/config/matterport3d.toml");
     auto val = config->get_qualified_as<std::string>("dataset.name");
     std::vector<Object> objects;
     for (const auto &obj : *config->get_table_array("object")) {
@@ -25,7 +25,7 @@ int main() {
         objects.emplace_back(object);
     }
 
-    Exporter::to_ply("../data/SUNC.toml");
+    Exporter::to_ply("../data/sunc/config/sunc.toml");
 
     /*
     for (auto &obj_pair : utils::cartesian_product(objects, objects)) {

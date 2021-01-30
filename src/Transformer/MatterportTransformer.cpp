@@ -7,6 +7,7 @@ struct FACE {
 
 
 void MatterportTransformer::transform(const std::string &path) {
+    std::cout << "start parsing matterport3d data" << std::endl;
     std::ifstream semseg_stream(path + "region17.semseg.json");
     nlohmann::json semseg_json;
     semseg_stream >> semseg_json;
@@ -101,7 +102,7 @@ void MatterportTransformer::transform(const std::string &path) {
     root->insert("dataset", meta_table);
 
     std::ofstream output;
-    output.open("../data/data_files/matterport3d.toml");
+    output.open("../data/matterport3d/config/matterport3d.toml");
     output << (*root);
     output.close();
     std::cout << "wrote matterport3d.toml" << std::endl;
