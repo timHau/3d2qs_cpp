@@ -9,10 +9,16 @@
 #include <string>
 #include "cpptoml.h"
 #include "happly.h"
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 class Exporter {
+private:
+    static void handle_toml(const fs::path &toml_path, const std::string &room_id);
+
 public:
-    static void to_ply(const std::string& input);
+    static void to_ply(const fs::path &input_dir);
 };
 
 

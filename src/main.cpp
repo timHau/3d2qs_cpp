@@ -22,7 +22,7 @@ int main() {
         objects.emplace_back(object);
     }
 
-    // Exporter::to_ply("../data/sunc/config/sunc.toml");
+    Exporter::to_ply("../data/sunc/config/");
 
     /*
     for (auto &obj_pair : utils::cartesian_product(objects, objects)) {

@@ -4,10 +4,23 @@
 
 #include "Exporter.h"
 
-void Exporter::to_ply(const std::string& input) {
+void Exporter::to_ply(const fs::path& input_dir) {
     // read .toml file and write them into an .ply file. Useful for debugging
 
-    auto config = cpptoml::parse_file(input);
+    for (const auto& config : fs::directory_iterator(input_dir)) {
+        const std::string toml_file = config.path().filename();
+        const fs::path toml_path = input_dir / toml_file;
+        try { fs::path room_id = toml_file;
+            room_id.replace_extension("");
+            handle_toml(toml_path, room_id);
+        } catch(cpptoml::parse_exception &e) {
+            std::cerr << e.what();
+        }
+    }
+}
+
+void Exporter::handle_toml(const fs::path &toml_path, const std::string &room_id) {
+    auto config = cpptoml::parse_file(toml_path);
 
     std::string dataset_name = config->get_qualified_as<std::string>("dataset.name")
             .value_or("");
@@ -42,10 +55,18 @@ void Exporter::to_ply(const std::string& input) {
             }
         }
 
+        const fs::path debug_path("../data/3d_objects_debug/");
+        const fs::path dir_path = debug_path / (dataset_name + "/") / room_id;
+        if (!fs::exists(dir_path)) {
+            std::cout << "created directory: " << dir_path << std::endl;
+            fs::create_directory(dir_path);
+        }
+        const std::string filename = "/" + label + "_" + id + ".ply";
+        const std::string output_path = dir_path.string() + filename;
+
         plyOut.addVertexPositions(vertices_bbox);
         plyOut.addFaceIndices(faces_bbox);
-        std::string filename = "../data/3d_objects_debug/" + dataset_name + "/" + label + "_" + id + ".ply";
-        plyOut.write(filename, happly::DataFormat::ASCII);
-        std::cout << "wrote " << filename << std::endl;
+        plyOut.write(output_path, happly::DataFormat::ASCII);
+        std::cout << "wrote " << output_path << std::endl;
     }
 }

@@ -2,6 +2,7 @@
 
 ## getting started
 first you will need the [eigen lib](http://eigen.tuxfamily.org/index.php?title=Main_Page), which we use for all linear algebra operations.
+We use `std::filesystem` so you should at least C++17
 
 ```shell
 cd ./include
