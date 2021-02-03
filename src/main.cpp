@@ -12,17 +12,18 @@ int main() {
     // load house.json
 
     SUNCTransformer::transform("../data/sunc/");
-    // MatterportTransformer::transform("../data/matterport3d/region_segmentations/");
+    MatterportTransformer::transform("../data/matterport3d/region_segmentations/");
 
     auto config = cpptoml::parse_file("../data/matterport3d/config/matterport3d.toml");
     auto val = config->get_qualified_as<std::string>("dataset.name");
     std::vector<Object> objects;
     for (const auto &obj : *config->get_table_array("object")) {
-        Object object(obj);
+        Object object{obj};
         objects.emplace_back(object);
     }
 
-    Exporter::to_ply("../data/sunc/config/");
+    // Exporter::to_ply("../data/sunc/config/");
+    Exporter::to_ply("../data/matterport3d/config/");
 
     /*
     for (auto &obj_pair : utils::cartesian_product(objects, objects)) {

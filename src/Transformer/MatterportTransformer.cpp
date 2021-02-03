@@ -1,6 +1,6 @@
 #include "MatterportTransformer.h"
 
-struct FACE {
+struct Face {
     int seg_ind; // index of the segment that this face is contained in
     std::vector<std::vector<double>> vertices; // 3 vertices that build the face
 };
@@ -25,7 +25,7 @@ void MatterportTransformer::transform(const std::string &path) {
     // every entry in the array 'segIndices' corresponds to one face
     // the i-th face is contained in the segment with id segIndices[i]
     auto fseg_indices = fseg_json["segIndices"];
-    std::vector<FACE> faces_per_region;
+    std::vector<Face> faces_per_region;
     for (int i = 0; i < fseg_indices.size(); ++i) {
         // the value 'vertex_indices' inside the .ply corresponds to the index of 3 vertices inside the face
         std::vector<std::vector<double>> vertices;
@@ -33,7 +33,7 @@ void MatterportTransformer::transform(const std::string &path) {
             vertices.push_back({vert_x[idx], vert_y[idx], vert_z[idx]});
         }
         auto seg_ind = fseg_indices[i];
-        FACE f{seg_ind, vertices};
+        Face f{seg_ind, vertices};
         faces_per_region.emplace_back(f);
     }
 
@@ -43,10 +43,10 @@ void MatterportTransformer::transform(const std::string &path) {
 
     for (const auto &seg_group : semseg_json["segGroups"]) {
         // get the faces (vector of vertices) of each object
-        std::vector<FACE> faces_per_object;
+        std::vector<Face> faces_per_object;
         std::vector<int> segments = seg_group["segments"];
         for (const int seg_id : segments) {
-            for (const FACE &f : faces_per_region) {
+            for (const Face &f : faces_per_region) {
                 if (f.seg_ind == seg_id) {
                     faces_per_object.emplace_back(f);
                 }
@@ -57,7 +57,7 @@ void MatterportTransformer::transform(const std::string &path) {
         double min_x = std::numeric_limits<double>::infinity(), max_x = -std::numeric_limits<double>::infinity();
         double min_y = std::numeric_limits<double>::infinity(), max_y = -std::numeric_limits<double>::infinity();
         double min_z = std::numeric_limits<double>::infinity(), max_z = -std::numeric_limits<double>::infinity();
-        for (const FACE &f : faces_per_object) {
+        for (const Face &f : faces_per_object) {
             for (const std::vector<double> &vertex : f.vertices) {
                 if (vertex[0] < min_x) { min_x = vertex[0]; }
                 if (vertex[0] > max_x) { max_x = vertex[0]; }

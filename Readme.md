@@ -7,8 +7,9 @@ We use `std::filesystem` so you should at least C++17
 ```shell
 cd ./include
 git clone https://gitlab.com/libeigen/eigen.git
-mv ./eigen/Eigen .
-rm -rf ./eigen
+mv ./eigen ./eigen_bk
+mv ./eigen_bk/Eigen .
+rm -rf ./eigen_bk
 ```
 
 ## data folder
