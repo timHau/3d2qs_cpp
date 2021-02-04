@@ -8,11 +8,8 @@
 #include "Exporter.h"
 
 int main() {
-    // TODO make os independent
-    // load house.json
-
-    SUNCTransformer::transform("../data/sunc/");
-    MatterportTransformer::transform("../data/matterport3d/region_segmentations/");
+    // SUNCTransformer::transform("../data/sunc/");
+    // MatterportTransformer::transform("../data/matterport3d/region_segmentations/");
 
     auto config = cpptoml::parse_file("../data/matterport3d/config/matterport3d.toml");
     auto val = config->get_qualified_as<std::string>("dataset.name");
@@ -23,7 +20,7 @@ int main() {
     }
 
     // Exporter::to_ply("../data/sunc/config/");
-    Exporter::to_ply("../data/matterport3d/config/");
+    // Exporter::to_ply("../data/matterport3d/config/");
 
     /*
     for (auto &obj_pair : utils::cartesian_product(objects, objects)) {
