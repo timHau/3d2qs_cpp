@@ -12,6 +12,15 @@ mv ./eigen_bk/Eigen .
 rm -rf ./eigen_bk
 ```
 
+## starting the project
+You can use a appropriate c++ ide, or you can simply compile/link from the command line
+```shell
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
 ## data folder
 ```
 data/
