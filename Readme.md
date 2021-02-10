@@ -13,7 +13,7 @@ rm -rf ./eigen_bk
 ```
 
 ## starting the project
-You can use a appropriate c++ ide, or you can simply compile/link from the command line
+You can use an c++ ide, or you can simply compile/link from the command line
 ```shell
 mkdir build
 cd build
