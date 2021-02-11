@@ -3,4 +3,5 @@ cmake-build-debug
 include/boost/
 include/Eigen/
 include/eigen/
+include/igl/
 build/

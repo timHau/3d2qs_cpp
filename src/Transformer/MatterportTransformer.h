@@ -4,6 +4,7 @@
 #include "happly.h"
 #include <iostream>
 #include <fstream>
+#include <igl/writeOBJ.h>
 #include <string>
 #include "json.hpp"
 #include "cpptoml.h"

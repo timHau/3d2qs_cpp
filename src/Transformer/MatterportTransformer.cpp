@@ -8,6 +8,9 @@ struct Face {
 
 void MatterportTransformer::transform(const std::string &path) {
     std::cout << "start parsing matterport3d data" << std::endl;
+
+    std::string base_output_path = "../data/matterport3d/config/";
+
     std::ifstream semseg_stream(path + "region17.semseg.json");
     nlohmann::json semseg_json;
     semseg_stream >> semseg_json;
@@ -53,32 +56,19 @@ void MatterportTransformer::transform(const std::string &path) {
             }
         }
 
-        // calculate the bounding box
-        double min_x = std::numeric_limits<double>::infinity(), max_x = -std::numeric_limits<double>::infinity();
-        double min_y = std::numeric_limits<double>::infinity(), max_y = -std::numeric_limits<double>::infinity();
-        double min_z = std::numeric_limits<double>::infinity(), max_z = -std::numeric_limits<double>::infinity();
+        std::vector<double> vertices_per_object = {};
+        std::vector<int> face_indices = {};
+
         for (const Face &f : faces_per_object) {
-            for (const std::vector<double> &vertex : f.vertices) {
-                if (vertex[0] < min_x) { min_x = vertex[0]; }
-                if (vertex[0] > max_x) { max_x = vertex[0]; }
-                if (vertex[1] < min_y) { min_y = vertex[1]; }
-                if (vertex[1] > max_y) { max_y = vertex[1]; }
-                if (vertex[2] < min_z) { min_z = vertex[2]; }
-                if (vertex[2] > max_z) { max_z = vertex[2]; }
+            for (auto &vertex : f.vertices) {
+                vertices_per_object.push_back(vertex[0]);
+                vertices_per_object.push_back(vertex[1]);
+                vertices_per_object.push_back(vertex[2]);
             }
         }
 
-        std::vector<std::vector<double>> bbox = {
-                {min_x, min_y, max_z},  // vorne, unten, links
-                {max_x, min_y, max_z},  // vorne, unten, rechts
-                {max_x, max_y, max_z},  // vorne, oben, rechts
-                {min_x, max_y, max_z},  // vorne, oben, links
-                {min_x, min_y, min_z},  // hinten, unten, links
-                {max_x, min_y, min_z},  // hinten, unten, rechts
-                {max_x, max_y, min_z},  // hinten, oben, rechts
-                {min_x, max_y, min_z},  // hinten, oben, links
-        };
 
+        /*
         auto bbox_array = cpptoml::make_array();
         for (const std::vector<double> &v : bbox) {
             auto row_array = cpptoml::make_array();
@@ -87,11 +77,27 @@ void MatterportTransformer::transform(const std::string &path) {
             }
             bbox_array->push_back(row_array);
         }
+         */
+
+        std::string label = seg_group["label"];
+        std::string id = std::to_string((int) seg_group["id"]);
+        std::string obj_name = id + "_" + label + ".obj";
+
+        // construct matrices of vertices and faces for libigl
+        auto num_rows_vert = vertices_per_object.size() / 3;
+        auto num_rows_face = face_indices.size() / 3;
+        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+            V(vertices_per_object.data(), num_rows_vert, 3);
+        Eigen::Map<Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+            F(face_indices.data(), num_rows_face, 3);
+        // write every object as a .obj file
+        igl::writeOBJ(base_output_path + obj_name, V, F);
+        std::cout << "writing " << obj_name << std::endl;
 
         auto object_table = cpptoml::make_table();
-        object_table->insert("bbox", bbox_array);
-        object_table->insert("id", std::to_string((int) seg_group["id"]));
-        object_table->insert("label", seg_group["label"]);
+//        object_table->insert("bbox", bbox_array);
+        object_table->insert("id", id);
+        object_table->insert("label", label);
         object_table_array->push_back(object_table);
     }
 
@@ -102,7 +108,7 @@ void MatterportTransformer::transform(const std::string &path) {
     root->insert("dataset", meta_table);
 
     std::ofstream output;
-    output.open("../data/matterport3d/config/matterport3d.toml");
+    output.open(base_output_path + "matterport3d.toml");
     output << (*root);
     output.close();
     std::cout << "wrote matterport3d.toml" << std::endl;
