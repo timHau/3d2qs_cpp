@@ -2,9 +2,9 @@
 // Created by tau on 29.01.21.
 //
 
-#include "Exporter.h"
+#include "DebugExporter.h"
 
-void Exporter::to_ply(const fs::path& input_dir) {
+void DebugExporter::to_ply(const fs::path& input_dir) {
     // read .toml file and write them into an .ply file. Useful for debugging
 
     for (const auto& config : fs::directory_iterator(input_dir)) {
@@ -19,7 +19,7 @@ void Exporter::to_ply(const fs::path& input_dir) {
     }
 }
 
-void Exporter::handle_toml(const fs::path &toml_path, const std::string &room_id) {
+void DebugExporter::handle_toml(const fs::path &toml_path, const std::string &room_id) {
     auto config = cpptoml::parse_file(toml_path);
 
     std::string dataset_name = config->get_qualified_as<std::string>("dataset.name")

@@ -2,8 +2,8 @@
 // Created by tau on 29.01.21.
 //
 
-#ifndef INC_3D2QS_SUNC_CPP_EXPORTER_H
-#define INC_3D2QS_SUNC_CPP_EXPORTER_H
+#ifndef INC_3D2QS_SUNC_CPP_DEBUGEXPORTER_H
+#define INC_3D2QS_SUNC_CPP_DEBUGEXPORTER_H
 
 #include <iostream>
 #include <string>
@@ -13,7 +13,7 @@
 
 namespace fs = std::filesystem;
 
-class Exporter {
+class DebugExporter {
 private:
     static void handle_toml(const fs::path &toml_path, const std::string &room_id);
 
@@ -22,4 +22,4 @@ public:
 };
 
 
-#endif //INC_3D2QS_SUNC_CPP_EXPORTER_H
+#endif //INC_3D2QS_SUNC_CPP_DEBUGEXPORTER_H

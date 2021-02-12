@@ -5,7 +5,7 @@
 
 #include "Transformer/SUNCTransformer.h"
 #include "Transformer/MatterportTransformer.h"
-#include "Exporter.h"
+#include "DebugExporter.h"
 
 int main() {
     SUNCTransformer::transform("../data/sunc/");
@@ -19,8 +19,8 @@ int main() {
         objects.emplace_back(object);
     }
 
-    // Exporter::to_ply("../data/sunc/config/");
-    // Exporter::to_ply("../data/matterport3d/config/");
+    DebugExporter::to_ply("../data/sunc/config/");
+    DebugExporter::to_ply("../data/matterport3d/config/");
 
     /*
     for (auto &obj_pair : utils::cartesian_product(objects, objects)) {
