@@ -10,12 +10,14 @@ Object::Object(const std::shared_ptr<cpptoml::table> &obj) {
 void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
     auto box = obj->get_array_of<cpptoml::array>("bbox");
 
+    // vertices of bounding box
     for (int i = 0; i < 8; ++i) {
         cpptoml::option<std::vector<double>> point = (*box)[i]->get_array_of<double>();
         Eigen::Vector3d v((*point)[0], (*point)[1], (*point)[2]);
         _bbox.emplace_back(v);
     }
 
+    // edges of bounding box
     std::vector<std::pair<int, int>> pairs = {
             {0, 1},
             {1, 2},
@@ -34,6 +36,14 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
         std::pair<Eigen::Vector3d, Eigen::Vector3d> line(_bbox[p.first], _bbox[p.second]);
         _bbox_lines.emplace_back(line);
     }
+
+    // set centroid of bounding box
+    Eigen::Vector3d V = _bbox[0];
+    Eigen::Vector3d A = _bbox[1];
+    Eigen::Vector3d B = _bbox[3];
+    Eigen::Vector3d C = _bbox[4];
+
+    _centroid = 1/2*(A + B + C - V);
 }
 
 std::vector<Eigen::Vector3d> *Object::get_bbox() {

@@ -11,6 +11,7 @@ private:
     std::string _id;
     std::vector<Eigen::Vector3d> _bbox;
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> _bbox_lines;
+    Eigen::Vector3d _centroid;
 
     void init_bbox(const std::shared_ptr<cpptoml::table> &obj);
 
