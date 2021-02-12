@@ -254,3 +254,9 @@ std::string Object::relation_to(Object obj_b) {
 
     return std::string();
 }
+
+tinyxml2::XMLElement* Object::as_xml(tinyxml2::XMLDocument &doc) {
+    tinyxml2::XMLElement *spatial = doc.NewElement("SPATIAL_ENTITY");
+    spatial->SetAttribute("ObjectID", _id.c_str());
+    return spatial;
+}

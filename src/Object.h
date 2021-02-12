@@ -4,6 +4,7 @@
 #include "cpptoml.h"
 #include <Eigen/Dense>
 #include <optional>
+#include <tinyXML2.h>
 
 class Object {
 private:
@@ -42,6 +43,8 @@ public:
     std::string *get_id();
 
     std::string relation_to(Object obj_b);
+
+    tinyxml2::XMLElement* as_xml(tinyxml2::XMLDocument &doc);
 };
 
 #endif //INC_3D2QS_SUNC_CPP_OBJECT_H

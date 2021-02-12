@@ -9,5 +9,20 @@ add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 
 add_executable(3d2qs_sunc_cpp
         src/main.cpp
-        src/Object.h src/Object.cpp include/cpptoml.h src/Object.cpp src/Object.h src/Transformer/SUNCTransformer.cpp src/Transformer/SUNCTransformer.h src/Utils.h src/Transformer/MatterportTransformer.cpp src/Transformer/MatterportTransformer.h include/happly.h src/DebugExporter.cpp src/DebugExporter.h)
+        src/Object.h
+        src/Object.cpp
+        src/Object.cpp
+        src/Object.h
+        src/Utils.h
+        src/Transformer/SUNCTransformer.cpp
+        src/Transformer/SUNCTransformer.h
+        src/Transformer/MatterportTransformer.cpp
+        src/Transformer/MatterportTransformer.h
+        include/cpptoml.h
+        include/happly.h
+        src/Exporter/DebugExporter.cpp
+        src/Exporter/DebugExporter.h
+        src/Exporter/XmlExporter.cpp
+        src/Exporter/XmlExporter.h
+        )
 

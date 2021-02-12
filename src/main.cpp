@@ -5,7 +5,9 @@
 
 #include "Transformer/SUNCTransformer.h"
 #include "Transformer/MatterportTransformer.h"
-#include "DebugExporter.h"
+
+#include "Exporter/DebugExporter.h"
+#include "Exporter/XmlExporter.h"
 
 int main() {
     SUNCTransformer::transform("../data/sunc/");
