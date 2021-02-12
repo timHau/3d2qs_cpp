@@ -43,7 +43,12 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
     Eigen::Vector3d B = _bbox[3];
     Eigen::Vector3d C = _bbox[4];
 
+    Eigen::Vector3d AV = (A - V);
+    Eigen::Vector3d BV = (B - V);
+    Eigen::Vector3d CV = (C - V);
+
     _centroid = 0.5 * (A + B + C - V);
+    _volume = AV.norm() * BV.norm() * CV.norm();
 }
 
 std::vector<Eigen::Vector3d> *Object::get_bbox() {
@@ -66,6 +71,19 @@ std::string *Object::get_label() {
 
 std::string *Object::get_id() {
     return &_id;
+}
+
+double Object::get_volume() {
+    return _volume;
+}
+
+Eigen::Vector3d Object::get_centroid() {
+    return _centroid;
+}
+
+double Object::get_distance_to(Object obj_b) {
+    Eigen::Vector3d d = obj_b.get_centroid() - _centroid;
+    return std::abs(d.norm());
 }
 
 bool Object::is_equal_to(Object obj_b) {
@@ -255,7 +273,18 @@ std::string Object::relation_to(Object obj_b) {
     return std::string();
 }
 
-tinyxml2::XMLElement* Object::as_xml(tinyxml2::XMLDocument &doc) {
+std::optional<std::string> Object::intrinsic_orientation_to(Object obj_b) {
+    bool is_smaller = _volume < obj_b.get_volume();
+
+    if (is_smaller) {
+        double distance = get_distance_to(obj_b);
+        // we only check objects that are twice the volume away
+        if (distance > _volume * 2)
+            return std::nullopt;
+    }
+}
+
+tinyxml2::XMLElement *Object::as_xml(tinyxml2::XMLDocument &doc) {
     tinyxml2::XMLElement *spatial = doc.NewElement("SPATIAL_ENTITY");
     spatial->SetAttribute("objectId", _id.c_str());
     spatial->SetAttribute("label", _label.c_str());

@@ -13,6 +13,7 @@ private:
     std::vector<Eigen::Vector3d> _bbox;
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> _bbox_lines;
     Eigen::Vector3d _centroid;
+    double _volume;
 
     void init_bbox(const std::shared_ptr<cpptoml::table> &obj);
 
@@ -42,9 +43,17 @@ public:
 
     std::string *get_id();
 
+    double get_volume();
+
+    Eigen::Vector3d get_centroid();
+
+    double get_distance_to(Object obj_b);
+
     std::string relation_to(Object obj_b);
 
-    tinyxml2::XMLElement* as_xml(tinyxml2::XMLDocument &doc);
+    std::optional<std::string> intrinsic_orientation_to(Object obj_b);
+
+    tinyxml2::XMLElement *as_xml(tinyxml2::XMLDocument &doc);
 };
 
 #endif //INC_3D2QS_SUNC_CPP_OBJECT_H
