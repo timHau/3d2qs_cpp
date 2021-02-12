@@ -4,7 +4,7 @@
 #include "cpptoml.h"
 #include <Eigen/Dense>
 #include <optional>
-#include <tinyXML2.h>
+#include <tinyxml2.h>
 
 class Object {
 private:

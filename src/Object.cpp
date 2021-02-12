@@ -43,7 +43,7 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
     Eigen::Vector3d B = _bbox[3];
     Eigen::Vector3d C = _bbox[4];
 
-    _centroid = 1/2*(A + B + C - V);
+    _centroid = 0.5 * (A + B + C - V);
 }
 
 std::vector<Eigen::Vector3d> *Object::get_bbox() {
@@ -257,6 +257,12 @@ std::string Object::relation_to(Object obj_b) {
 
 tinyxml2::XMLElement* Object::as_xml(tinyxml2::XMLDocument &doc) {
     tinyxml2::XMLElement *spatial = doc.NewElement("SPATIAL_ENTITY");
-    spatial->SetAttribute("ObjectID", _id.c_str());
+    spatial->SetAttribute("objectId", _id.c_str());
+    spatial->SetAttribute("label", _label.c_str());
+
+    std::stringstream location;
+    location << _centroid[0] << ", " << _centroid[1] << ", " << _centroid[2];
+    spatial->SetAttribute("location", location.str().c_str());
+
     return spatial;
 }

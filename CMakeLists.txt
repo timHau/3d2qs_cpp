@@ -20,6 +20,8 @@ add_executable(3d2qs_sunc_cpp
         src/Transformer/MatterportTransformer.h
         include/cpptoml.h
         include/happly.h
+        include/tinyxml2.cpp
+        include/tinyxml2.h
         src/Exporter/DebugExporter.cpp
         src/Exporter/DebugExporter.h
         src/Exporter/XmlExporter.cpp

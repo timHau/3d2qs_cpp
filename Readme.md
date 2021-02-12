@@ -31,11 +31,13 @@ data/
 ├── matterport3d/
 │  ├── .gitignore
 │  ├── config/
+│  ├── xml/
 │  └── region_segmentations/
 │ 
 └── sunc
    ├── .gitignore
    ├── config/
+   ├── xml/
    ├── house/
    └── object/
 ```

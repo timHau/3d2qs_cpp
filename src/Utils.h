@@ -5,7 +5,7 @@
 
 namespace utils {
     std::vector<std::pair<Object, Object>>
-    cartesian_product(const std::vector<Object>& objs_a, const std::vector<Object>& objs_b) {
+    cartesian_product(std::vector<Object>& objs_a, std::vector<Object>& objs_b) {
         std::vector<std::pair<Object, Object>> product;
         for (const Object& i : objs_a) {
             for (const Object& j : objs_b) {
