@@ -6,14 +6,20 @@
 #include <optional>
 #include <tinyxml2.h>
 
+struct BoundingBox {
+    std::vector<Eigen::Vector3d> vertices;
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> edges;
+    std::vector<std::vector<Eigen::Vector3d>> faces;
+    std::vector<Eigen::Vector3d> normals;
+};
+
 class Object {
 private:
     std::string _label;
     std::string _id;
-    std::vector<Eigen::Vector3d> _bbox;
-    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> _bbox_lines;
     Eigen::Vector3d _centroid;
     double _volume;
+    BoundingBox _bbox;
 
     void init_bbox(const std::shared_ptr<cpptoml::table> &obj);
 
@@ -30,12 +36,18 @@ private:
 
     bool is_inside_box(const Eigen::Vector3d &p);
 
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_min_max_bbox();
+
+    double get_distance_to(Object obj_b);
+
+    [[nodiscard]] double get_volume() const;
+
+    Eigen::Vector3d get_centroid();
+
 public:
     explicit Object(const std::shared_ptr<cpptoml::table> &obj);
 
     std::vector<Eigen::Vector3d> *get_bbox();
-
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> get_min_max_bbox();
 
     std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> *get_bbox_lines();
 
@@ -43,15 +55,11 @@ public:
 
     std::string *get_id();
 
-    double get_volume();
-
-    Eigen::Vector3d get_centroid();
-
-    double get_distance_to(Object obj_b);
-
     std::string relation_to(Object obj_b);
 
-    std::optional<std::string> intrinsic_orientation_to(Object obj_b);
+    int side_of(const Object &obj_b);
+
+    std::optional<std::string> intrinsic_orientation_to(const Object& obj_b);
 
     tinyxml2::XMLElement *as_xml(tinyxml2::XMLDocument &doc);
 };

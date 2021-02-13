@@ -13,10 +13,8 @@ namespace fs = std::filesystem;
 
 
 int main() {
-    /*
     SUNCTransformer::transform("../data/sunc/");
     MatterportTransformer::transform("../data/matterport3d/region_segmentations/");
-     */
 
     for (auto & f : fs::directory_iterator("../data")) {
         std::cout << f.path() << std::endl;
@@ -33,11 +31,8 @@ int main() {
     fs::path xml_output_path_matterport("../data/matterport3d/xml/matterport3d.xml");
     XmlExporter::to_xml(xml_output_path_matterport, objects_matterport);
 
-
-    /*
     DebugExporter::to_ply("../data/sunc/config/");
     DebugExporter::to_ply("../data/matterport3d/config/");
-    */
 
     /*
     Object obj_a = objects[77];

@@ -11,12 +11,14 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
     auto box = obj->get_array_of<cpptoml::array>("bbox");
 
     // vertices of bounding box
+    std::vector<Eigen::Vector3d> vertices = {};
     for (int i = 0; i < 8; ++i) {
         cpptoml::option<std::vector<double>> point = (*box)[i]->get_array_of<double>();
         Eigen::Vector3d v((*point)[0], (*point)[1], (*point)[2]);
-        _bbox.emplace_back(v);
+        vertices.emplace_back(v);
     }
 
+    std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> edges;
     // edges of bounding box
     std::vector<std::pair<int, int>> pairs = {
             {0, 1},
@@ -33,15 +35,39 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
             {5, 1},
     };
     for (std::pair<int, int> p : pairs) {
-        std::pair<Eigen::Vector3d, Eigen::Vector3d> line(_bbox[p.first], _bbox[p.second]);
-        _bbox_lines.emplace_back(line);
+        std::pair<Eigen::Vector3d, Eigen::Vector3d> line(vertices[p.first], vertices[p.second]);
+        edges.emplace_back(line);
     }
 
+    const std::vector<std::vector<Eigen::Vector3d>> faces = {
+            {vertices[0], vertices[1], vertices[2], vertices[3]},  // vorne
+            {vertices[3], vertices[2], vertices[6], vertices[7]},  // oben
+            {vertices[1], vertices[5], vertices[6], vertices[2]},  // rechts
+            {vertices[4], vertices[5], vertices[1], vertices[0]},  // unten
+            {vertices[4], vertices[0], vertices[3], vertices[7]},  // links
+            {vertices[5], vertices[4], vertices[7], vertices[6]},  // hinten
+    };
+
+    std::vector<Eigen::Vector3d> normals = {
+            (vertices[2] - vertices[1]).cross(vertices[0] - vertices[1]),
+            (vertices[6] - vertices[5]).cross(vertices[1] - vertices[5]),
+            (vertices[6] - vertices[2]).cross(vertices[3] - vertices[2]),
+            (vertices[0] - vertices[1]).cross(vertices[5] - vertices[1]),
+            (vertices[3] - vertices[0]).cross(vertices[4] - vertices[0]),
+            (vertices[7] - vertices[4]).cross(vertices[5] - vertices[4]),
+    };
+    for (Eigen::Vector3d &normal : normals) {
+        normal = normal.normalized();
+    }
+
+    _bbox = BoundingBox{vertices, edges, faces, normals};
+
+
     // set centroid of bounding box
-    Eigen::Vector3d V = _bbox[0];
-    Eigen::Vector3d A = _bbox[1];
-    Eigen::Vector3d B = _bbox[3];
-    Eigen::Vector3d C = _bbox[4];
+    Eigen::Vector3d V = vertices[0];
+    Eigen::Vector3d A = vertices[1];
+    Eigen::Vector3d B = vertices[3];
+    Eigen::Vector3d C = vertices[4];
 
     Eigen::Vector3d AV = (A - V);
     Eigen::Vector3d BV = (B - V);
@@ -52,16 +78,16 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table> &obj) {
 }
 
 std::vector<Eigen::Vector3d> *Object::get_bbox() {
-    return &_bbox;
+    return &_bbox.vertices;
 }
 
 std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> *Object::get_bbox_lines() {
-    return &_bbox_lines;
+    return &_bbox.edges;
 }
 
 std::pair<Eigen::Vector3d, Eigen::Vector3d> Object::get_min_max_bbox() {
     // returns smallest and largest x,y,z point of the bounding box
-    std::pair<Eigen::Vector3d, Eigen::Vector3d> values(_bbox[0], _bbox[6]);
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> values(_bbox.vertices[0], _bbox.vertices[6]);
     return values;
 }
 
@@ -73,7 +99,7 @@ std::string *Object::get_id() {
     return &_id;
 }
 
-double Object::get_volume() {
+double Object::get_volume() const {
     return _volume;
 }
 
@@ -87,7 +113,7 @@ double Object::get_distance_to(Object obj_b) {
 }
 
 bool Object::is_equal_to(Object obj_b) {
-    return _bbox == *obj_b.get_bbox();
+    return _bbox.vertices == *obj_b.get_bbox();
 }
 
 std::optional<Eigen::Vector3d>
@@ -133,39 +159,17 @@ int Object::count_inside_bb(std::vector<Eigen::Vector3d> &obj_b_bbox) {
 bool Object::is_tangent_to(Object &obj_b) {
     // test if obj_b bounding box is inside the face of this bounding box
 
-    std::vector<Eigen::Vector3d> bbox_a = *get_bbox();
-    const std::vector<std::vector<Eigen::Vector3d>> faces = {
-            {bbox_a[0], bbox_a[1], bbox_a[2], bbox_a[3]},  // vorne
-            {bbox_a[3], bbox_a[2], bbox_a[6], bbox_a[7]},  // oben
-            {bbox_a[1], bbox_a[5], bbox_a[6], bbox_a[2]},  // rechts
-            {bbox_a[4], bbox_a[5], bbox_a[1], bbox_a[0]},  // unten
-            {bbox_a[4], bbox_a[0], bbox_a[3], bbox_a[7]},  // links
-            {bbox_a[5], bbox_a[4], bbox_a[7], bbox_a[6]},  // hinten
-    };
-
-    std::vector<Eigen::Vector3d> normals = {
-            (bbox_a[2] - bbox_a[1]).cross(bbox_a[0] - bbox_a[1]),
-            (bbox_a[6] - bbox_a[5]).cross(bbox_a[1] - bbox_a[5]),
-            (bbox_a[6] - bbox_a[2]).cross(bbox_a[3] - bbox_a[2]),
-            (bbox_a[0] - bbox_a[1]).cross(bbox_a[5] - bbox_a[1]),
-            (bbox_a[3] - bbox_a[0]).cross(bbox_a[4] - bbox_a[0]),
-            (bbox_a[7] - bbox_a[4]).cross(bbox_a[5] - bbox_a[4]),
-    };
-    for (Eigen::Vector3d &normal : normals) {
-        normal = normal.normalized();
-    }
-
     bool is_inside = false;
     for (const Eigen::Vector3d &v : *obj_b.get_bbox()) {
-        for (int i = 0; i < faces.size(); ++i) {
-            std::vector<Eigen::Vector3d> face = faces[i];
+        for (int i = 0; i < _bbox.faces.size(); ++i) {
+            std::vector<Eigen::Vector3d> face = _bbox.faces[i];
             // get point that is on face
             Eigen::Vector3d a = face[0];
             // get vector from that point to the point that is tested
             Eigen::Vector3d av = (a - v);
             // test if this vector is one the plane <==>  <(a-v), normal> = 0
             bool is_inside_plane = false;
-            if (av.dot(normals[i]) == 0) {
+            if (av.dot(_bbox.normals[i]) == 0) {
                 is_inside_plane = true;
             }
 
@@ -273,7 +277,18 @@ std::string Object::relation_to(Object obj_b) {
     return std::string();
 }
 
-std::optional<std::string> Object::intrinsic_orientation_to(Object obj_b) {
+int Object::side_of(const Object &obj_b) {
+    // return on which side obj_b is,
+    // 0 -> front,
+    // 1 -> top,
+    // 2 -> right,
+    // 3 -> bottom,
+    // 4 -> left,
+    // 5 -> back
+    return 0;
+}
+
+std::optional<std::string> Object::intrinsic_orientation_to(const Object& obj_b) {
     bool is_smaller = _volume < obj_b.get_volume();
 
     if (is_smaller) {
@@ -281,6 +296,7 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object obj_b) {
         // we only check objects that are twice the volume away
         if (distance > _volume * 2)
             return std::nullopt;
+
     }
 }
 
