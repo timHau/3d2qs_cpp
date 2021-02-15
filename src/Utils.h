@@ -3,17 +3,21 @@
 
 #include "Object.h"
 
-namespace utils {
-    std::vector<std::pair<Object, Object>>
-    cartesian_product(std::vector<Object>& objs_a, std::vector<Object>& objs_b) {
-        std::vector<std::pair<Object, Object>> product;
-        for (const Object& i : objs_a) {
-            for (const Object& j : objs_b) {
-                product.emplace_back(i, j);
-            }
-        }
-        return product;
-    }
+namespace utils
+{
+	std::vector<std::pair<Object, Object>>
+	cartesian_product(std::vector<Object>& objs_a, std::vector<Object>& objs_b)
+	{
+		std::vector<std::pair<Object, Object>> product;
+		for (const Object& i : objs_a)
+		{
+			for (const Object& j : objs_b)
+			{
+				product.emplace_back(i, j);
+			}
+		}
+		return product;
+	}
 
 }
 

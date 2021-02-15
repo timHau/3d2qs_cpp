@@ -8,9 +8,10 @@
 
 namespace fs = std::filesystem;
 
-class XmlExporter {
+class XmlExporter
+{
 public:
-    static void to_xml(const fs::path &output_path, std::vector<Object> &objects);
+	static void to_xml(const fs::path& output_path, std::vector<Object>& objects);
 };
 
 

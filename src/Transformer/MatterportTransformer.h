@@ -8,9 +8,10 @@
 #include "json.hpp"
 #include "cpptoml.h"
 
-class MatterportTransformer {
+class MatterportTransformer
+{
 public:
-    static void transform(const std::string& path);
+	static void transform(const std::string& path);
 };
 
 

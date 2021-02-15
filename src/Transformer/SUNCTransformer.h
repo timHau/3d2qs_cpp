@@ -11,12 +11,13 @@
 
 namespace fs = std::filesystem;
 
-class SUNCTransformer {
+class SUNCTransformer
+{
 private:
-    static void handle_room(const nlohmann::json &json_data, const fs::path &output_path);
+	static void handle_room(const nlohmann::json& json_data, const fs::path& output_path);
 
 public:
-    static void transform(const std::string &path);
+	static void transform(const std::string& path);
 };
 
 

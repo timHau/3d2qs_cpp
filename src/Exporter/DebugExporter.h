@@ -13,12 +13,13 @@
 
 namespace fs = std::filesystem;
 
-class DebugExporter {
+class DebugExporter
+{
 private:
-    static void handle_toml(const fs::path &toml_path, const std::string &room_id);
+	static void handle_toml(const fs::path& toml_path, const std::string& room_id);
 
 public:
-    static void to_ply(const fs::path &input_dir);
+	static void to_ply(const fs::path& input_dir);
 };
 
 
