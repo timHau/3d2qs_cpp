@@ -5,11 +5,8 @@ Object::Object(const std::shared_ptr<cpptoml::table>& obj)
 {
 	_label = *(obj->get_qualified_as<std::string>("label"));
 	_id = *(obj->get_qualified_as<std::string>("id"));
-	init_bbox(obj);
-}
 
-void Object::init_bbox(const std::shared_ptr<cpptoml::table>& obj)
-{
+	// intialize bounding box
 	auto box = obj->get_array_of<cpptoml::array>("bbox");
 
 	// vertices of bounding box

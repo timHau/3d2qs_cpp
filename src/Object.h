@@ -23,8 +23,6 @@ private:
 	double _volume;
 	BoundingBox _bbox;
 
-	void init_bbox(const std::shared_ptr<cpptoml::table>& obj);
-
 	bool is_equal_to(Object obj_b) const;
 
 	bool is_tangent_to(Object& obj_b);
