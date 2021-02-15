@@ -18,7 +18,6 @@ namespace utils
 		}
 		return product;
 	}
-
 }
 
 #endif //INC_3D2QS_SUNC_CPP_UTILS_H

@@ -25,7 +25,10 @@ void DebugExporter::to_ply(const fs::path& input_dir)
 	}
 }
 
-void DebugExporter::handle_toml(const fs::path& toml_path, const std::string& room_id)
+void DebugExporter::handle_toml(
+		const fs::path& toml_path,
+		const std::string& room_id
+)
 {
 	auto config = cpptoml::parse_file(toml_path);
 
@@ -73,7 +76,7 @@ void DebugExporter::handle_toml(const fs::path& toml_path, const std::string& ro
 			std::cout << "created directory: " << dir_path << std::endl;
 			fs::create_directory(dir_path);
 		}
-		const std::string filename = "/" + label + "_" + id + ".ply";
+		const std::string filename = "/" + id + "_" + label + ".ply";
 		const std::string output_path = dir_path.string() + filename;
 
 		plyOut.addVertexPositions(vertices_bbox);

@@ -60,13 +60,9 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table>& obj)
 			(vertices[3] - vertices[0]).cross(vertices[4] - vertices[0]),
 			(vertices[7] - vertices[4]).cross(vertices[5] - vertices[4]),
 	};
-	for (Eigen::Vector3d& normal : normals)
-	{
-		normal = normal.normalized();
-	}
+
 
 	_bbox = BoundingBox{ vertices, edges, faces, normals };
-
 
 	// set centroid of bounding box
 	Eigen::Vector3d V = vertices[0];
@@ -97,10 +93,22 @@ std::vector<std::vector<Eigen::Vector3d>>* Object::get_bbox_faces()
 	return &_bbox.faces;
 }
 
+std::vector<Eigen::Vector3d>* Object::get_bbox_normals()
+{
+	return &_bbox.normals;
+}
+
 std::pair<Eigen::Vector3d, Eigen::Vector3d> Object::get_min_max_bbox()
 {
 	// returns smallest and largest x,y,z point of the bounding box
-	std::pair<Eigen::Vector3d, Eigen::Vector3d> values(_bbox.vertices[0], _bbox.vertices[6]);
+	Eigen::Vector3d smallest = _bbox.vertices[0];
+	Eigen::Vector3d biggest = _bbox.vertices[6];
+	for (const auto& v : _bbox.vertices)
+	{
+		if (v.x() <= smallest.x() && v.y() <= smallest.y() && v.z() <= smallest.z()) smallest = v;
+		if (v.x() >= biggest.x() && v.y() >= biggest.y() && v.z() >= biggest.z()) biggest = v;
+	}
+	std::pair<Eigen::Vector3d, Eigen::Vector3d> values(smallest, biggest);
 	return values;
 }
 
@@ -135,10 +143,17 @@ bool Object::is_equal_to(Object obj_b) const
 	return _bbox.vertices == *obj_b.get_bbox_vertices();
 }
 
+/*
+ * return the point of intersection between a line and the bounding box
+ */
 std::optional<Eigen::Vector3d>
-Object::get_intersection(double dist_1, double dist_2, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2)
+Object::get_intersection_of_line_with_bbox(
+		double dist_1,
+		double dist_2,
+		const Eigen::Vector3d& p1,
+		const Eigen::Vector3d& p2
+)
 {
-	// return the point of intersection between a line and the bounding box
 	if (dist_1 * dist_2 != 0 || dist_1 == dist_2)
 	{
 		return std::nullopt;
@@ -225,7 +240,9 @@ bool Object::is_tangent_to(Object& obj_b)
 /*
  * count how often the lines of the bounding box of object b intersect with the this bounding box
  */
-int Object::count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox)
+int Object::count_lines_inside_bb(
+		std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox
+)
 {
 	int count = 0;
 	for (auto& line : obj_b_lines_bbox)
@@ -254,12 +271,12 @@ int Object::count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::
 			continue;
 		}
 		auto possible_interesctions = {
-				get_intersection(l1.x() - b1.x(), l2.x() - b1.x(), l1, l2),
-				get_intersection(l1.y() - b1.y(), l2.y() - b1.y(), l1, l2),
-				get_intersection(l1.z() - b1.z(), l2.z() - b1.z(), l1, l2),
-				get_intersection(l1.x() - b2.x(), l2.x() - b1.x(), l1, l2),
-				get_intersection(l1.y() - b2.y(), l2.y() - b1.y(), l1, l2),
-				get_intersection(l1.z() - b2.z(), l2.z() - b1.z(), l1, l2),
+				get_intersection_of_line_with_bbox(l1.x() - b1.x(), l2.x() - b1.x(), l1, l2),
+				get_intersection_of_line_with_bbox(l1.y() - b1.y(), l2.y() - b1.y(), l1, l2),
+				get_intersection_of_line_with_bbox(l1.z() - b1.z(), l2.z() - b1.z(), l1, l2),
+				get_intersection_of_line_with_bbox(l1.x() - b2.x(), l2.x() - b1.x(), l1, l2),
+				get_intersection_of_line_with_bbox(l1.y() - b2.y(), l2.y() - b1.y(), l1, l2),
+				get_intersection_of_line_with_bbox(l1.z() - b2.z(), l2.z() - b1.z(), l1, l2),
 		};
 		for (auto& intersection : possible_interesctions)
 		{
@@ -270,18 +287,6 @@ int Object::count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::
 		}
 	}
 	return count;
-}
-
-/*
- * find the intersection between the planes of the bounding box
- * from this Object with the bounding box of obj_b
- */
-void Object::plane_intersections(Object& obj_b)
-{
-	for (const auto& plane_a : _bbox.faces)
-	{
-		for (const auto& plane_b : obj_b.get_bbox_vertices())
-	}
 }
 
 std::string Object::relation_to(Object& obj_b)
@@ -295,10 +300,11 @@ std::string Object::relation_to(Object& obj_b)
 	// number of points from obj_b that are inside this bounding box
 	int inside_count = count_inside_bb(*obj_b.get_bbox_vertices());
 	// number of intersections between lines of bbox obj_b with this bbox
-	int count_line_interesctions = count_lines_inside_bb(*obj_b.get_bbox_edges());
+	int line_interesection_count_ab = count_lines_inside_bb(*obj_b.get_bbox_edges());
+	int line_interesection_count_ba = obj_b.count_lines_inside_bb(_bbox.edges);
 
 	// check for partial intersection
-	if ((0 < inside_count && inside_count < 8) || count_line_interesctions > 0)
+	if ((0 < inside_count && inside_count < 8) && (line_interesection_count_ab > 0 || line_interesection_count_ba > 0))
 	{
 		if (is_tangent_to(obj_b))
 		{
@@ -308,12 +314,6 @@ std::string Object::relation_to(Object& obj_b)
 		{
 			return "PO";
 		}
-	}
-
-	// check disjoint
-	if (inside_count == 0)
-	{
-		return "DC";
 	}
 
 	// check obj_b contained in this bounding box
@@ -337,7 +337,7 @@ std::string Object::relation_to(Object& obj_b)
 		return "NTPP";
 	}
 
-	return std::string();
+	return "DC";
 }
 
 /*
@@ -369,6 +369,7 @@ std::optional<std::string> Object::intrinsic_orientation_to(const Object& obj_b)
 			return std::nullopt;
 
 	}
+	return "";
 }
 
 /*

@@ -18,8 +18,6 @@ void XmlExporter::to_xml(const fs::path& output_path, std::vector<Object>& objec
 		Object obj_a = obj_pair.first;
 		Object obj_b = obj_pair.second;
 		std::string rel = obj_a.relation_to(obj_b);
-		std::cout << obj_a.get_label()->c_str() << " " << obj_a.get_id()->c_str() << " with "
-				  << obj_b.get_label()->c_str() << " " << obj_b.get_id()->c_str() << " in " << rel << std::endl;
 		if (rel != "DC" && rel != "EQ")
 		{
 			tinyxml2::XMLElement* qslink = doc.NewElement("QSLINK");
@@ -34,5 +32,5 @@ void XmlExporter::to_xml(const fs::path& output_path, std::vector<Object>& objec
 
 	doc.InsertFirstChild(root);
 	doc.SaveFile(output_path.c_str());
-	// std::cout << "wrote xml: " << output_path.c_str() << std::endl;
+	std::cout << "wrote xml: " << output_path.c_str() << std::endl;
 }

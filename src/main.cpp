@@ -35,13 +35,15 @@ int main()
 	/*
 	fs::path xml_output_path_matterport("../data/matterport3d/xml/matterport3d.xml");
 	XmlExporter::to_xml(xml_output_path_matterport, objects_matterport);
+	 */
 
+	/*
 	DebugExporter::to_ply("../data/sunc/config/");
 	DebugExporter::to_ply("../data/matterport3d/config/");
 	 */
 
-	auto obj_a = objects_matterport[25];
-	auto obj_b = objects_matterport[70];
+	auto obj_a = objects_matterport[9];
+	auto obj_b = objects_matterport[64];
 	auto rel_ab = obj_a.relation_to(obj_b);
 	auto rel_ba = obj_b.relation_to(obj_a);
 	std::cout << obj_a.get_id()->c_str() << " " << rel_ab << " " << obj_b.get_id()->c_str() << std::endl;

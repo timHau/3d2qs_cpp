@@ -29,12 +29,13 @@ private:
 
 	bool is_tangent_to(Object& obj_b);
 
-	int count_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox);
-
-	int count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox);
-
 	std::optional<Eigen::Vector3d>
-	get_intersection(double dist_1, double dist_2, const Eigen::Vector3d& p1, const Eigen::Vector3d& p2);
+	get_intersection_of_line_with_bbox(
+			double dist_1,
+			double dist_2,
+			const Eigen::Vector3d& p1,
+			const Eigen::Vector3d& p2
+	);
 
 	bool is_inside_box(const Eigen::Vector3d& p);
 
@@ -46,7 +47,6 @@ private:
 
 	Eigen::Vector3d get_centroid();
 
-	void plane_intersections(Object& obj_b);
 
 public:
 	explicit Object(const std::shared_ptr<cpptoml::table>& obj);
@@ -56,6 +56,8 @@ public:
 	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>* get_bbox_edges();
 
 	std::vector<std::vector<Eigen::Vector3d>>* get_bbox_faces();
+
+	std::vector<Eigen::Vector3d>* get_bbox_normals();
 
 	std::string* get_label();
 
@@ -68,6 +70,13 @@ public:
 	std::optional<std::string> intrinsic_orientation_to(const Object& obj_b);
 
 	tinyxml2::XMLElement* as_xml(tinyxml2::XMLDocument& doc);
+
+	int count_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox);
+
+	int count_lines_inside_bb(
+			std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox
+	);
+
 };
 
 #endif //INC_3D2QS_SUNC_CPP_OBJECT_H
