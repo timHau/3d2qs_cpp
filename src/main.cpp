@@ -32,22 +32,30 @@ int main()
 		objects_matterport.emplace_back(object);
 	}
 
-	/*
 	fs::path xml_output_path_matterport("../data/matterport3d/xml/matterport3d.xml");
 	XmlExporter::to_xml(xml_output_path_matterport, objects_matterport);
-	 */
 
 	/*
 	DebugExporter::to_ply("../data/sunc/config/");
 	DebugExporter::to_ply("../data/matterport3d/config/");
 	 */
 
-	auto obj_a = objects_matterport[9];
-	auto obj_b = objects_matterport[64];
-	auto rel_ab = obj_a.relation_to(obj_b);
-	auto rel_ba = obj_b.relation_to(obj_a);
-	std::cout << obj_a.get_id()->c_str() << " " << rel_ab << " " << obj_b.get_id()->c_str() << std::endl;
-	std::cout << obj_b.get_id()->c_str() << " " << rel_ba << " " << obj_a.get_id()->c_str() << std::endl;
+	for (int i = 0; i <= 77; ++i)
+	{
+		for (int j = 0; j <= 77; ++j)
+		{
+			auto obj_a = objects_matterport[i];
+			auto obj_b = objects_matterport[j];
+			auto rel_ab = obj_a.relation_to(obj_b);
+			auto rel_ba = obj_b.relation_to(obj_a);
+			if ((rel_ab != "DC" || rel_ba != "DC") && rel_ab != "EQ")
+			{
+				std::cout << obj_a.get_id()->c_str() << " " << rel_ab << " " << obj_b.get_id()->c_str() << std::endl;
+				std::cout << obj_b.get_id()->c_str() << " " << rel_ba << " " << obj_a.get_id()->c_str() << std::endl;
+				std::cout << "-------" << std::endl;
+			}
+		}
+	}
 
 	return 0;
 }

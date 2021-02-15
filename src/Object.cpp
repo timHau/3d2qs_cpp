@@ -154,7 +154,7 @@ Object::get_intersection_of_line_with_bbox(
 		const Eigen::Vector3d& p2
 )
 {
-	if (dist_1 * dist_2 != 0 || dist_1 == dist_2)
+	if (dist_1 == dist_2)
 	{
 		return std::nullopt;
 	}
@@ -180,10 +180,11 @@ bool Object::is_inside_box(const Eigen::Vector3d& p)
 	return (t_1 && t_2 && t_3);
 }
 
+/*
+ *  test which points from obj_b bounding box is inside this bounding box, returns indices
+ */
 int Object::count_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox)
 {
-	// test which points from obj_b bounding box is inside this bounding box, returns indices
-
 	// number of points in obj_bs bounding box that are inside obj_as bounding box
 	int count = 0;
 	for (const Eigen::Vector3d& P : obj_b_bbox)
@@ -266,8 +267,7 @@ int Object::count_lines_inside_bb(
 			l1.y() > b1.y() && l1.y() < b2.y() &&
 			l1.z() > b1.z() && l1.z() < b2.z())
 		{
-			// the line is fully inside the box, we count that as a intersection
-			count++;
+			// the line is fully inside the bounding box
 			continue;
 		}
 		auto possible_interesctions = {
@@ -278,7 +278,7 @@ int Object::count_lines_inside_bb(
 				get_intersection_of_line_with_bbox(l1.y() - b2.y(), l2.y() - b1.y(), l1, l2),
 				get_intersection_of_line_with_bbox(l1.z() - b2.z(), l2.z() - b1.z(), l1, l2),
 		};
-		for (auto& intersection : possible_interesctions)
+		for (auto intersection : possible_interesctions)
 		{
 			if (intersection && is_inside_box(*intersection))
 			{
@@ -304,7 +304,8 @@ std::string Object::relation_to(Object& obj_b)
 	int line_interesection_count_ba = obj_b.count_lines_inside_bb(_bbox.edges);
 
 	// check for partial intersection
-	if ((0 < inside_count && inside_count < 8) && (line_interesection_count_ab > 0 || line_interesection_count_ba > 0))
+	bool has_line_intersections = line_interesection_count_ab > 0 || line_interesection_count_ba > 0;
+	if (has_line_intersections)
 	{
 		if (is_tangent_to(obj_b))
 		{
