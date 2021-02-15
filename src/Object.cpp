@@ -53,12 +53,12 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table>& obj)
 	};
 
 	std::vector<Eigen::Vector3d> normals = {
-			(vertices[2] - vertices[1]).cross(vertices[0] - vertices[1]),
-			(vertices[6] - vertices[5]).cross(vertices[1] - vertices[5]),
-			(vertices[6] - vertices[2]).cross(vertices[3] - vertices[2]),
-			(vertices[0] - vertices[1]).cross(vertices[5] - vertices[1]),
-			(vertices[3] - vertices[0]).cross(vertices[4] - vertices[0]),
-			(vertices[7] - vertices[4]).cross(vertices[5] - vertices[4]),
+			(vertices[2] - vertices[1]).cross(vertices[0] - vertices[1]), // vorne
+			(vertices[6] - vertices[2]).cross(vertices[3] - vertices[2]), // oben
+			(vertices[6] - vertices[5]).cross(vertices[1] - vertices[5]), // rechts
+			(vertices[0] - vertices[1]).cross(vertices[5] - vertices[1]), // unten
+			(vertices[3] - vertices[0]).cross(vertices[4] - vertices[0]), // links
+			(vertices[7] - vertices[4]).cross(vertices[5] - vertices[4]), // hinten
 	};
 
 
@@ -127,14 +127,14 @@ double Object::get_volume() const
 	return _volume;
 }
 
-Eigen::Vector3d Object::get_centroid()
+Eigen::Vector3d* Object::get_centroid()
 {
-	return _centroid;
+	return &_centroid;
 }
 
 double Object::get_distance_to(Object obj_b)
 {
-	Eigen::Vector3d d = obj_b.get_centroid() - _centroid;
+	Eigen::Vector3d d = *obj_b.get_centroid() - _centroid;
 	return std::abs(d.norm());
 }
 
@@ -344,33 +344,65 @@ std::string Object::relation_to(Object& obj_b)
 /*
  * Calculate on which side of this object, obj_b is
  * 0 -> front
- * 1 -> top
+ * 1 -> up
  * 2 -> right
- * 3 -> bottom
+ * 3 -> down
  * 4 -> left
- * 5 -> back
+ * 5 -> behind
  */
-int Object::side_of(const Object& obj_b)
+int Object::side_of(Object& obj_b) const
 {
-	return 0;
+	auto normals = _bbox.normals;
+	int biggest_index = 0;
+	double biggest_val = -std::numeric_limits<double>::infinity();
+	for (int i = 0; i < normals.size(); ++i)
+	{
+		auto normal = normals[i];
+		auto centroid_b = *obj_b.get_centroid();
+		double projected = normal.dot(centroid_b);
+		if (projected >= biggest_val)
+		{
+			biggest_index = i;
+			biggest_val = projected;
+		}
+	}
+	return biggest_index;
 }
 
 /*
  * Calculates the OLink between this Objects Bounding box and the bounding box of obj_b
  */
-std::optional<std::string> Object::intrinsic_orientation_to(const Object& obj_b)
+std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 {
 	bool is_smaller = _volume < obj_b.get_volume();
 
-	if (is_smaller)
-	{
-		double distance = get_distance_to(obj_b);
-		// we only check objects that are twice the volume away
-		if (distance > _volume * 2)
-			return std::nullopt;
+	if (!is_smaller)
+		return "not the smaller one";
 
+	/*
+	double distance = get_distance_to(obj_b);
+	// we only check objects that are twice the volume away
+	if (distance > _volume * 2)
+		return std::nullopt;
+	*/
+
+	switch (side_of(obj_b))
+	{
+	case 0:
+		return "in_front_of";
+	case 1:
+		return "on or above";
+	case 2:
+		return "next_to (right)";
+	case 3:
+		return "beneath or below";
+	case 4:
+		return "next_to (left)";
+	case 5:
+		return "behind";
+	default:
+		return std::nullopt;
 	}
-	return "";
 }
 
 /*

@@ -45,8 +45,6 @@ private:
 
 	double get_volume() const;
 
-	Eigen::Vector3d get_centroid();
-
 
 public:
 	explicit Object(const std::shared_ptr<cpptoml::table>& obj);
@@ -63,11 +61,13 @@ public:
 
 	std::string* get_id();
 
+	Eigen::Vector3d* get_centroid();
+
 	std::string relation_to(Object& obj_b);
 
-	int side_of(const Object& obj_b);
+	int side_of(Object& obj_b) const;
 
-	std::optional<std::string> intrinsic_orientation_to(const Object& obj_b);
+	std::optional<std::string> intrinsic_orientation_to(Object& obj_b);
 
 	tinyxml2::XMLElement* as_xml(tinyxml2::XMLDocument& doc);
 

@@ -40,21 +40,12 @@ int main()
 	DebugExporter::to_ply("../data/matterport3d/config/");
 	 */
 
-	for (int i = 0; i <= 77; ++i)
-	{
-		for (int j = 0; j <= 77; ++j)
-		{
-			auto obj_a = objects_matterport[i];
-			auto obj_b = objects_matterport[j];
-			auto rel_ab = obj_a.relation_to(obj_b);
-			auto rel_ba = obj_b.relation_to(obj_a);
-			if ((rel_ab != "DC" || rel_ba != "DC") && rel_ab != "EQ")
-			{
-				std::cout << obj_a.get_id()->c_str() << " " << rel_ab << " " << obj_b.get_id()->c_str() << std::endl;
-				std::cout << obj_b.get_id()->c_str() << " " << rel_ba << " " << obj_a.get_id()->c_str() << std::endl;
-				std::cout << "-------" << std::endl;
-			}
-		}
+	auto obj_a = objects_matterport[65];
+	auto obj_b = objects_matterport[63];
+	auto rel_ab = obj_a.intrinsic_orientation_to(obj_b);
+	if (rel_ab) {
+		std::cout << obj_a.get_id()->c_str() << " " << rel_ab.value() << " " << obj_b.get_id()->c_str() << std::endl;
+		std::cout << "-------" << std::endl;
 	}
 
 	return 0;
