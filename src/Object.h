@@ -25,7 +25,7 @@ private:
 
 	void init_bbox(const std::shared_ptr<cpptoml::table>& obj);
 
-	bool is_equal_to(Object obj_b);
+	bool is_equal_to(Object obj_b) const;
 
 	bool is_tangent_to(Object& obj_b);
 
@@ -46,14 +46,16 @@ private:
 
 	Eigen::Vector3d get_centroid();
 
-	void plane_intersection(Object& obj_b);
+	void plane_intersections(Object& obj_b);
 
 public:
 	explicit Object(const std::shared_ptr<cpptoml::table>& obj);
 
-	std::vector<Eigen::Vector3d>* get_bbox();
+	std::vector<Eigen::Vector3d>* get_bbox_vertices();
 
-	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>* get_bbox_lines();
+	std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>* get_bbox_edges();
+
+	std::vector<std::vector<Eigen::Vector3d>>* get_bbox_faces();
 
 	std::string* get_label();
 

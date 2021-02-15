@@ -82,14 +82,19 @@ void Object::init_bbox(const std::shared_ptr<cpptoml::table>& obj)
 	_volume = AV.norm() * BV.norm() * CV.norm();
 }
 
-std::vector<Eigen::Vector3d>* Object::get_bbox()
+std::vector<Eigen::Vector3d>* Object::get_bbox_vertices()
 {
 	return &_bbox.vertices;
 }
 
-std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>* Object::get_bbox_lines()
+std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>* Object::get_bbox_edges()
 {
 	return &_bbox.edges;
+}
+
+std::vector<std::vector<Eigen::Vector3d>>* Object::get_bbox_faces()
+{
+	return &_bbox.faces;
 }
 
 std::pair<Eigen::Vector3d, Eigen::Vector3d> Object::get_min_max_bbox()
@@ -125,9 +130,9 @@ double Object::get_distance_to(Object obj_b)
 	return std::abs(d.norm());
 }
 
-bool Object::is_equal_to(Object obj_b)
+bool Object::is_equal_to(Object obj_b) const
 {
-	return _bbox.vertices == *obj_b.get_bbox();
+	return _bbox.vertices == *obj_b.get_bbox_vertices();
 }
 
 std::optional<Eigen::Vector3d>
@@ -144,7 +149,7 @@ Object::get_intersection(double dist_1, double dist_2, const Eigen::Vector3d& p1
 bool Object::is_inside_box(const Eigen::Vector3d& p)
 {
 	// get the points from bottom and top face
-	std::vector<Eigen::Vector3d> bbox_a = *get_bbox();
+	std::vector<Eigen::Vector3d> bbox_a = *get_bbox_vertices();
 	Eigen::Vector3d V = bbox_a[0];
 	Eigen::Vector3d A = bbox_a[1];
 	Eigen::Vector3d B = bbox_a[3];
@@ -182,7 +187,7 @@ int Object::count_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox)
 bool Object::is_tangent_to(Object& obj_b)
 {
 	bool is_inside = false;
-	for (const Eigen::Vector3d& v : *obj_b.get_bbox())
+	for (const Eigen::Vector3d& v : *obj_b.get_bbox_vertices())
 	{
 		for (int i = 0; i < _bbox.faces.size(); ++i)
 		{
@@ -271,8 +276,12 @@ int Object::count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::
  * find the intersection between the planes of the bounding box
  * from this Object with the bounding box of obj_b
  */
-void Object::plane_intersection(Object& obj_b)
+void Object::plane_intersections(Object& obj_b)
 {
+	for (const auto& plane_a : _bbox.faces)
+	{
+		for (const auto& plane_b : obj_b.get_bbox_vertices())
+	}
 }
 
 std::string Object::relation_to(Object& obj_b)
@@ -284,9 +293,9 @@ std::string Object::relation_to(Object& obj_b)
 	}
 
 	// number of points from obj_b that are inside this bounding box
-	int inside_count = count_inside_bb(*obj_b.get_bbox());
+	int inside_count = count_inside_bb(*obj_b.get_bbox_vertices());
 	// number of intersections between lines of bbox obj_b with this bbox
-	int count_line_interesctions = count_lines_inside_bb(*obj_b.get_bbox_lines());
+	int count_line_interesctions = count_lines_inside_bb(*obj_b.get_bbox_edges());
 
 	// check for partial intersection
 	if ((0 < inside_count && inside_count < 8) || count_line_interesctions > 0)
@@ -318,7 +327,7 @@ std::string Object::relation_to(Object& obj_b)
 	}
 
 	// check if this is contained in obj_b
-	int inside_count_c = obj_b.count_inside_bb(*get_bbox());
+	int inside_count_c = obj_b.count_inside_bb(*get_bbox_vertices());
 	if (inside_count_c == 8)
 	{
 		if (is_tangent_to(obj_b))
