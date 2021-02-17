@@ -28,18 +28,17 @@ data/
 │  ├── matterport3d/
 │  └── sunc/
 │ 
-├── matterport3d/
-│  ├── .gitignore
-│  ├── config/
-│  ├── xml/
-│  └── region_segmentations/
-│ 
-└── sunc
-   ├── .gitignore
-   ├── config/
-   ├── xml/
-   ├── house/
-   └── object/
+├── datasets/
+   ├── matterport3d/
+   │  ├── config/
+   │  ├── xml/
+   │  └── region_segmentations/
+   │
+   └── sunc
+      ├── config/
+      ├── xml/
+      ├── house/
+      └── object/
 ```
 
 ## dependencies
