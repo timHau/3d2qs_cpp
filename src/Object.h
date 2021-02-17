@@ -27,7 +27,7 @@ private:
 
 	bool is_tangent_to(Object& obj_b);
 
-	std::optional<Eigen::Vector3d>
+	static std::optional<Eigen::Vector3d>
 	get_intersection_of_line_with_bbox(
 			double dist_1,
 			double dist_2,

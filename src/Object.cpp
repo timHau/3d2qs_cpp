@@ -349,21 +349,57 @@ std::string Object::relation_to(Object& obj_b)
  */
 int Object::side_of(Object& obj_b) const
 {
-	auto normals = _bbox.normals;
-	int biggest_index = 0;
-	double biggest_val = -std::numeric_limits<double>::infinity();
-	for (int i = 0; i < normals.size(); ++i)
+	auto diff_centroids = *obj_b.get_centroid() - _centroid;
+	// compute the angles the vector makes to the three positive axis
+	double yz2_sqrt = std::sqrt(std::pow(diff_centroids.y(), 2) + std::pow(diff_centroids.z(), 2));
+	auto angle_x = std::atan2(yz2_sqrt, diff_centroids.x());
+	double zx2_sqrt = std::sqrt(std::pow(diff_centroids.z(), 2) + std::pow(diff_centroids.x(), 2));
+	auto angle_y = std::atan2(zx2_sqrt, diff_centroids.y());
+	double xy2_sqrt = std::sqrt(std::pow(diff_centroids.x(), 2) + std::pow(diff_centroids.y(), 2));
+	auto angle_z = std::atan2(xy2_sqrt, diff_centroids.z());
+	// note that atan(1)*4 approx pi is used to convert from radians to degrees
+	angle_x *= 180 / (std::atan(1)*4);
+	angle_y *= 180 / (std::atan(1)*4);
+	angle_z *= 180 / (std::atan(1)*4);
+
+	// project difference of centroids on each axis and get absolute value
+	Eigen::Vector3d e1(1, 0, 0);
+	Eigen::Vector3d e2(0, 1, 0);
+	Eigen::Vector3d e3(0, 0, 1);
+	auto x_len = std::abs(diff_centroids.dot(e1));
+	auto y_len = std::abs(diff_centroids.dot(e2));
+	auto z_len = std::abs(diff_centroids.dot(e3));
+
+	// choose the direction in which diff_centroids "points the most"
+	if (x_len >= y_len && x_len >= z_len)
 	{
-		auto normal = normals[i];
-		auto centroid_b = *obj_b.get_centroid();
-		double projected = normal.dot(centroid_b);
-		if (projected >= biggest_val)
-		{
-			biggest_index = i;
-			biggest_val = projected;
-		}
+		if ((0 <= angle_x && angle_x < 90) || (270 <= angle_x && angle_x < 360))
+			// difference of centroids points right ==> object is to the left
+			std::cout << "right" << std::endl;
+		else if (90 <= angle_x && angle_x < 270)
+			// difference of centroids points left ==> object is to the right
+			std::cout << "left" << std::endl;
 	}
-	return biggest_index;
+
+	if (y_len >= x_len && y_len >= z_len)
+	{
+		if ((0 <= angle_y && angle_y < 90) || (270 <= angle_y && angle_y < 360))
+			// difference of centroids points back ==> object is in the front
+			std::cout << "back" << std::endl;
+		else if (90 <= angle_y && angle_y < 270)
+			// difference of centroids points front ==> object is behind
+			std::cout << "front" << std::endl;
+	}
+
+	if (z_len >= x_len && z_len >= y_len)
+	{
+		if ((0 <= angle_z && angle_z < 90) || (270 <= angle_z && angle_z < 360))
+			std::cout << "up" << std::endl;
+		else if (90 <= angle_z && angle_z < 270)
+			std::cout << "down" << std::endl;
+	}
+
+	return -1;
 }
 
 /*
@@ -374,7 +410,7 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 	bool is_smaller = _volume < obj_b.get_volume();
 
 	if (!is_smaller)
-		return "not the smaller one";
+		return std::nullopt;
 
 	/*
 	double distance = get_distance_to(obj_b);
@@ -388,13 +424,17 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 	case 0:
 		return "in_front_of";
 	case 1:
-		return "on or above";
+		if (is_tangent_to(obj_b))
+			return "on";
+		return "above";
 	case 2:
-		return "next_to (right)";
+		return "next_to";
 	case 3:
-		return "beneath or below";
+		if (is_tangent_to(obj_b))
+			return "beneath";
+		return "below";
 	case 4:
-		return "next_to (left)";
+		return "next_to";
 	case 5:
 		return "behind";
 	default:

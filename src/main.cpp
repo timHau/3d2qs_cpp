@@ -40,11 +40,13 @@ int main()
 	DebugExporter::to_ply("../data/matterport3d/config/");
 	 */
 
-	auto obj_a = objects_matterport[65];
-	auto obj_b = objects_matterport[63];
+	auto obj_a = objects_matterport[10];
+	auto obj_b = objects_matterport[13];
 	auto rel_ab = obj_a.intrinsic_orientation_to(obj_b);
-	if (rel_ab) {
-		std::cout << obj_a.get_id()->c_str() << " " << rel_ab.value() << " " << obj_b.get_id()->c_str() << std::endl;
+	if (rel_ab)
+	{
+		std::cout << obj_a.get_id()->c_str() << " " << rel_ab.value() << " " << obj_b.get_id()->c_str()
+				  << std::endl;
 		std::cout << "-------" << std::endl;
 	}
 
