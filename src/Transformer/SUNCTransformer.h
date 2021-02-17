@@ -9,6 +9,9 @@
 #include "tiny_obj_loader.h"
 #include <filesystem>
 
+#define _USE_MATH_DEFINES // for C++
+#include <cmath>
+
 namespace fs = std::filesystem;
 
 class SUNCTransformer

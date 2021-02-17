@@ -357,10 +357,10 @@ int Object::side_of(Object& obj_b) const
 	auto angle_y = std::atan2(zx2_sqrt, diff_centroids.y());
 	double xy2_sqrt = std::sqrt(std::pow(diff_centroids.x(), 2) + std::pow(diff_centroids.y(), 2));
 	auto angle_z = std::atan2(xy2_sqrt, diff_centroids.z());
-	// note that atan(1)*4 approx pi is used to convert from radians to degrees
-	angle_x *= 180 / (std::atan(1)*4);
-	angle_y *= 180 / (std::atan(1)*4);
-	angle_z *= 180 / (std::atan(1)*4);
+	// convert to degrees
+	angle_x *= 180 / M_PI;
+	angle_y *= 180 / M_PI;
+	angle_z *= 180 / M_PI;
 
 	// project difference of centroids on each axis and get absolute value
 	Eigen::Vector3d e1(1, 0, 0);

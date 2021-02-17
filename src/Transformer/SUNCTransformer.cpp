@@ -60,8 +60,13 @@ void SUNCTransformer::handle_room(const nlohmann::json& json_data, const fs::pat
 				auto bbox_array = cpptoml::make_array();
 				for (const Eigen::Vector3d& v : bbox)
 				{
+					// rotate the boxes to fit to blender coordinate system
+					Eigen::Matrix3d m;
+					m = Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitX());
+					Eigen::Vector3d rotated = m * v;
+
 					auto row_array = cpptoml::make_array();
-					for (auto v_i : v)
+					for (auto v_i : rotated)
 					{
 						row_array->push_back(v_i);
 					}
@@ -71,10 +76,17 @@ void SUNCTransformer::handle_room(const nlohmann::json& json_data, const fs::pat
 				// for now only handle objects
 				if (node["type"] == "Object" && node["valid"] == 1)
 				{
+					// add transformation
+					auto transform = cpptoml::make_array();
+					for (double t_i : node["transform"]) {
+						transform->push_back(t_i);
+					}
+
 					// parse nodes to one toml file
 					auto object_table = cpptoml::make_table();
 					object_table->insert("bbox", bbox_array);
 					object_table->insert("id", node["modelId"]);
+					object_table->insert("transform", transform);
 					// TODO replace modelId by true label
 					object_table->insert("label", node["modelId"]);
 					object_table_array->push_back(object_table);

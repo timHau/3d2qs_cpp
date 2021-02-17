@@ -10,15 +10,36 @@ struct Face
 void MatterportTransformer::transform(const std::string& path)
 {
 	std::cout << "start parsing matterport3d data" << std::endl;
-	std::ifstream semseg_stream(path + "region17.semseg.json");
+
+	const fs::path matterport_path(path);
+	const fs::path config_path = matterport_path / "config";
+	const fs::path region_path = matterport_path / "region_segmentations";
+
+	// hard coded for now. We know the dataset has 28 regions
+	for (int i = 0; i <= 28; ++i)
+	{
+		std::string region = "region" + std::to_string(i);
+		const fs::path output_path = config_path / (region + ".toml");
+		handle_region(region_path, region, output_path);
+	}
+
+}
+
+void MatterportTransformer::handle_region(
+		const fs::path& region_path,
+		const std::string& region,
+		const fs::path& output_path
+)
+{
+	std::ifstream semseg_stream(region_path / (region + ".semseg.json"));
 	nlohmann::json semseg_json;
 	semseg_stream >> semseg_json;
 
-	std::ifstream fseg_stream(path + "region17.fsegs.json");
+	std::ifstream fseg_stream(region_path / (region + ".fsegs.json"));
 	nlohmann::json fseg_json;
 	fseg_stream >> fseg_json;
 
-	happly::PLYData ply_file(path + "region17.ply");
+	happly::PLYData ply_file(region_path / (region + ".ply"));
 	std::vector<double> vert_x = ply_file.getElement("vertex").getProperty<double>("x");
 	std::vector<double> vert_y = ply_file.getElement("vertex").getProperty<double>("y");
 	std::vector<double> vert_z = ply_file.getElement("vertex").getProperty<double>("z");
@@ -114,8 +135,8 @@ void MatterportTransformer::transform(const std::string& path)
 	root->insert("dataset", meta_table);
 
 	std::ofstream output;
-	output.open("../data/matterport3d/config/matterport3d.toml");
+	output.open(output_path);
 	output << (*root);
 	output.close();
-	std::cout << "wrote matterport3d.toml" << std::endl;
+	std::cout << "wrote: " << output_path << std::endl;
 }

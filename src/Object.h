@@ -6,6 +6,9 @@
 #include <optional>
 #include <tinyxml2.h>
 
+#define _USE_MATH_DEFINES // for C++
+#include <cmath>
+
 struct BoundingBox
 {
 	std::vector<Eigen::Vector3d> vertices;
