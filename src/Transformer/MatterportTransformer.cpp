@@ -1,35 +1,20 @@
 #include "MatterportTransformer.h"
 
-struct Face
-{
-	int seg_ind; // index of the segment that this face is contained in
-	std::vector<std::vector<double>> vertices; // 3 vertices that build the face
+struct Obj {
+	std::string category_index;
+	std::vector<double> obb;
+	std::string catergory_name;
 };
-
 
 void MatterportTransformer::transform(const std::string& path)
 {
-	std::cout << "start parsing matterport3d data" << std::endl;
-
 	const fs::path matterport_path(path);
-	const fs::path config_path = matterport_path / "config";
-	const fs::path region_path = matterport_path / "region_segmentations";
-	const fs::path house_path = matterport_path / "house_segmentations";
-	const fs::path metadata_path = matterport_path / "metadata";
-
-	auto categories = get_column_tsv(metadata_path / "category_mapping.tsv", 2);
-
-	// TODO loop over houses
 	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
-
 	const std::string house_name = "1pXnuDYAj8r";
-	handle_house(house_path, house_name, root, categories);
 
-	auto meta_table = cpptoml::make_table();
-	meta_table->insert("name", house_name);
-	root->insert("dataset", meta_table);
+	handle_house(matterport_path, house_name, root);
 
-	const fs::path output_path = config_path / (house_name + ".toml");
+	const fs::path output_path = matterport_path / "config" / (house_name + ".toml");
 	std::ofstream output;
 	output.open(output_path);
 	output << (*root);
@@ -38,48 +23,125 @@ void MatterportTransformer::transform(const std::string& path)
 }
 
 void MatterportTransformer::handle_house(
-		const fs::path& house_path,
+		const fs::path& matterport_path,
 		const std::string& house_name,
-		const std::shared_ptr<cpptoml::table>& root,
-		const std::vector<std::string>& categories
+		const std::shared_ptr<cpptoml::table>& root
 )
 {
-	std::ifstream semseg_stream(house_path / (house_name + ".semseg.json"));
-	nlohmann::json semseg_json;
-	semseg_stream >> semseg_json;
+	const fs::path house_path = matterport_path / "house_segmentations";
+	std::cout << "start parsing " << house_name << std::endl;
 
-	auto object_table_array = cpptoml::make_table_array();
-	for (const auto& seg_group : semseg_json["segGroups"])
+	auto house = read_house_file(house_path, house_name);
+
+	// for every region in the house
+	for (int i = 0; i < house["region_indices"].size(); ++i)
 	{
-		handle_object(seg_group, object_table_array, categories);
+		std::string region_id = std::to_string(i);
+		// for every object in the region
+		std::vector<Obj> objects_per_region;
+		for (const auto& obj_line : house["object_indices"])
+		{
+			auto splited_obj = split_line(obj_line);
+			if (region_id == splited_obj[2])
+			{
+				auto category_index = splited_obj[3];
+				auto obb = std::vector<double>(4, 15);
+				Obj o{category_index, obb};
+				objects_per_region.push_back(o);
+			}
+		}
+
+		// find the right category matching category_index
+		for (Obj& o : objects_per_region)
+		{
+			for (const auto& category_line : house["category_indices"])
+			{
+				auto splited_cat = split_line(category_line);
+				if (o.category_index == splited_cat[1])
+					o.catergory_name = splited_cat[3];
+			}
+		}
 	}
-	root->insert("object", object_table_array);
 }
 
-void MatterportTransformer::handle_object(
-		const nlohmann::json& seg_group,
-		const std::shared_ptr<cpptoml::table_array>& object_table_array,
-		const std::vector<std::string>& categories
+
+std::map<std::string, std::vector<std::string>> MatterportTransformer::read_house_file(
+		const fs::path& house_path,
+		const std::string& house_name
 )
 {
-	int label_index = seg_group["label_index"];
-	auto id = std::to_string((int) seg_group["id"]);
-	auto obb = seg_group["obb"];
-	auto segments = seg_group["segments"];
-	std::cout << categories[label_index] << std::endl;
-	std::cout << obb << std::endl;
+	std::vector<std::string> level_indices;
+	std::vector<std::string> region_indices;
+	std::vector<std::string> portal_indices;
+	std::vector<std::string> surface_indices;
+	std::vector<std::string> vertex_indices;
+	std::vector<std::string> category_indices;
+	std::vector<std::string> object_indices;
+	std::vector<std::string> segment_indices;
 
-	auto centroid_array = cpptoml::make_array();
-	std::vector<double> centroid = obb["centroid"];
-	for (auto& c_i : centroid)
-		centroid_array->push_back(c_i);
+	std::ifstream house_file(house_path / (house_name + ".house"));
+	std::string line;
+	while (std::getline(house_file, line))
+	{
+		if (line.at(0) == 'L')
+			level_indices.push_back(line);
+		if (line.at(0) == 'R')
+			region_indices.push_back(line);
+		if (line.at(0) == 'P')
+			portal_indices.push_back(line);
+		if (line.at(0) == 'S')
+			surface_indices.push_back(line);
+		if (line.at(0) == 'V')
+			vertex_indices.push_back(line);
+		if (line.at(0) == 'C')
+			category_indices.push_back(line);
+		if (line.at(0) == 'O')
+			object_indices.push_back(line);
+		if (line.at(0) == 'S')
+			segment_indices.push_back(line);
+	}
 
-	auto object_table = cpptoml::make_table();
-	// object_table->insert("bbox", bbox_array);
-	object_table->insert("id", id);
-	object_table->insert("label", categories[label_index]);
-	object_table->insert("centroid", centroid_array);
-	object_table_array->push_back(object_table);
+	std::map<std::string, std::vector<std::string>> res;
+	res["level_indices"] = level_indices;
+	res["region_indices"] = region_indices;
+	res["portal_indices"] = portal_indices;
+	res["surface_indices"] = surface_indices;
+	res["vertex_indices"] = vertex_indices;
+	res["category_indices"] = category_indices;
+	res["object_indices"] = object_indices;
+	res["segment_indices"] = segment_indices;
+
+	return res;
+}
+
+std::vector<std::string> MatterportTransformer::split_line(const std::string& line)
+{
+	std::vector<std::string> res;
+	std::istringstream iss(line);
+	std::copy(std::istream_iterator<std::string>(iss),
+			std::istream_iterator<std::string>(),
+			std::back_inserter(res));
+	return res;
+}
+
+void MatterportTransformer::write_as_ply(
+		const fs::path& out_path,
+		std::vector<double>& vert_x_out,
+		std::vector<double>& vert_y_out,
+		std::vector<double>& vert_z_out,
+		std::vector<std::vector<int>>& vert_indices_out
+)
+{
+	// write each object as a .ply
+	happly::PLYData objectPly;
+	objectPly.addElement("vertex", vert_x_out.size());
+	objectPly.addElement("face", vert_indices_out.size());
+	objectPly.getElement("vertex").addProperty<double>("x", vert_x_out);
+	objectPly.getElement("vertex").addProperty<double>("y", vert_y_out);
+	objectPly.getElement("vertex").addProperty<double>("z", vert_z_out);
+	objectPly.getElement("face").addListProperty<int>("vertex_indices", vert_indices_out);
+	objectPly.write(out_path);
+	std::cout << "wrote: " << out_path << std::endl;
 }
 
 std::vector<std::string> MatterportTransformer::get_column_tsv(const std::string& file_name, int column)
@@ -90,7 +152,6 @@ std::vector<std::string> MatterportTransformer::get_column_tsv(const std::string
 	std::string line;
 	while (std::getline(file, line))
 	{
-		std::vector<std::string> parts;
 		std::istringstream iss(line);
 		std::string token;
 		std::vector<std::string> tokens;
