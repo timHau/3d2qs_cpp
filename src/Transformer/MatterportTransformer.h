@@ -19,6 +19,20 @@ private:
 			const std::string& region,
 			const fs::path& output_path);
 
+	static void handle_house(
+			const fs::path& house_path,
+			const std::string& house_name,
+			const std::shared_ptr<cpptoml::table>& root,
+			const std::vector<std::string>& categories);
+
+	static void handle_object(
+			const nlohmann::json& seg_group,
+			const std::shared_ptr<cpptoml::table_array>& object_table_array,
+			const std::vector<std::string>& categories);
+
+	static std::vector<std::string> get_column_tsv(
+			const std::string& file_name,
+			int column);
 
 public:
 	static void transform(const std::string& path);

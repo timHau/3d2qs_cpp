@@ -23,6 +23,7 @@ int main()
 	}
 	 */
 
+	/*
 	auto config = cpptoml::parse_file("../data/datasets/sunc/config/0004d52d1aeeb8ae6de39d6bd993e992.toml");
 	auto val = config->get_qualified_as<std::string>("dataset.name");
 	std::vector<Object> objects_matterport;
@@ -31,14 +32,15 @@ int main()
 		Object object{ obj };
 		objects_matterport.emplace_back(object);
 	}
+	 */
 
 	/*
 	fs::path xml_output_path_matterport("../data/datasets/matterport3d/xml/matterport3d.xml");
 	XmlExporter::to_xml(xml_output_path_matterport, objects_matterport);
 	 */
 
-	DebugExporter::to_ply("../data/datasets/sunc/config/");
 	/*
+	DebugExporter::to_ply("../data/datasets/sunc/config/");
 	DebugExporter::to_ply("../data/datasets/matterport3d/config/");
 	 */
 

@@ -5,6 +5,7 @@
 #include <tinyxml2.h>
 #include <filesystem>
 #include "../Object.h"
+#include "../Utils.h"
 
 namespace fs = std::filesystem;
 

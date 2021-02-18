@@ -14,16 +14,68 @@ void MatterportTransformer::transform(const std::string& path)
 	const fs::path matterport_path(path);
 	const fs::path config_path = matterport_path / "config";
 	const fs::path region_path = matterport_path / "region_segmentations";
+	const fs::path house_path = matterport_path / "house_segmentations";
+	const fs::path metadata_path = matterport_path / "metadata";
 
-	// hard coded for now. We know the dataset has 28 regions
-	for (int i = 0; i <= 28; ++i)
-	{
-		std::string region = "region" + std::to_string(i);
-		const fs::path output_path = config_path / (region + ".toml");
-		handle_region(region_path, region, output_path);
-	}
+	auto categories = get_column_tsv(metadata_path / "category_mapping.tsv", 2);
 
+	// TODO loop over houses
+	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
+
+	const std::string house_name = "1pXnuDYAj8r";
+	handle_house(house_path, house_name, root, categories);
+
+	auto meta_table = cpptoml::make_table();
+	meta_table->insert("name", house_name);
+	root->insert("dataset", meta_table);
+
+	const fs::path output_path = config_path / (house_name + ".toml");
+	std::ofstream output;
+	output.open(output_path);
+	output << (*root);
+	output.close();
+	std::cout << "wrote: " << output_path << std::endl;
 }
+
+void MatterportTransformer::handle_house(
+		const fs::path& house_path,
+		const std::string& house_name,
+		const std::shared_ptr<cpptoml::table>& root,
+		const std::vector<std::string>& categories
+)
+{
+	std::ifstream semseg_stream(house_path / (house_name + ".semseg.json"));
+	nlohmann::json semseg_json;
+	semseg_stream >> semseg_json;
+
+	auto object_table_array = cpptoml::make_table_array();
+	for (const auto& seg_group : semseg_json["segGroups"])
+	{
+		handle_object(seg_group, object_table_array, categories);
+	}
+	root->insert("object", object_table_array);
+}
+
+void MatterportTransformer::handle_object(
+		const nlohmann::json& seg_group,
+		const std::shared_ptr<cpptoml::table_array>& object_table_array,
+		const std::vector<std::string>& categories
+)
+{
+	int label_index = seg_group["label_index"];
+	auto id = std::to_string((int) seg_group["id"]);
+	auto obb = seg_group["obb"];
+	auto segments = seg_group["segments"];
+	std::cout << obb << std::endl;
+
+
+	auto object_table = cpptoml::make_table();
+	// object_table->insert("bbox", bbox_array);
+	object_table->insert("id", id);
+	object_table->insert("label", categories[label_index]);
+	object_table_array->push_back(object_table);
+}
+
 
 void MatterportTransformer::handle_region(
 		const fs::path& region_path,
@@ -31,6 +83,7 @@ void MatterportTransformer::handle_region(
 		const fs::path& output_path
 )
 {
+	/*
 	std::ifstream semseg_stream(region_path / (region + ".semseg.json"));
 	nlohmann::json semseg_json;
 	semseg_stream >> semseg_json;
@@ -62,9 +115,6 @@ void MatterportTransformer::handle_region(
 		faces_per_region.emplace_back(f);
 	}
 
-	// prepare .toml
-	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
-	auto object_table_array = cpptoml::make_table_array();
 
 	for (const auto& seg_group : semseg_json["segGroups"])
 	{
@@ -139,4 +189,30 @@ void MatterportTransformer::handle_region(
 	output << (*root);
 	output.close();
 	std::cout << "wrote: " << output_path << std::endl;
+	 */
+}
+
+std::vector<std::string> MatterportTransformer::get_column_tsv(const std::string& file_name, int column)
+{
+	std::vector<std::string> res = {};
+
+	std::ifstream file(file_name);
+	std::string line;
+	while (std::getline(file, line))
+	{
+		std::vector<std::string> parts;
+		std::istringstream iss(line);
+		std::string token;
+		std::vector<std::string> tokens;
+		while (std::getline(iss, token, '\t'))
+			tokens.push_back(token);
+
+		if (column < tokens.size())
+			res.push_back(tokens[column]);
+	}
+
+	// we dont need the heading of the column
+	res.erase(res.begin());
+
+	return res;
 }

@@ -1,17 +1,18 @@
 #ifndef INC_3D2QS_SUNC_CPP_UTILS_H
 #define INC_3D2QS_SUNC_CPP_UTILS_H
 
-#include "Object.h"
-
 namespace utils
 {
-	std::vector<std::pair<Object, Object>>
-	cartesian_product(std::vector<Object>& objs_a, std::vector<Object>& objs_b)
+	template<typename T>
+	extern std::vector<std::pair<T, T>> cartesian_product(
+			std::vector<T>& objs_a,
+			std::vector<T>& objs_b
+	)
 	{
-		std::vector<std::pair<Object, Object>> product;
-		for (const Object& i : objs_a)
+		std::vector<std::pair<T, T>> product;
+		for (const T& i : objs_a)
 		{
-			for (const Object& j : objs_b)
+			for (const T& j : objs_b)
 			{
 				product.emplace_back(i, j);
 			}

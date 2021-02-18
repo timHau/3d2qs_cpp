@@ -32,6 +32,9 @@ data/
    ├── matterport3d/
    │  ├── config/
    │  ├── xml/
+   │  ├── house_segmentations/
+   │  ├── cameras/
+   │  ├── metadata/
    │  └── region_segmentations/
    │
    └── sunc

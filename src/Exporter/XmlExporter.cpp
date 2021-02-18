@@ -1,5 +1,4 @@
 #include "XmlExporter.h"
-#include "../Utils.h"
 
 void XmlExporter::to_xml(const fs::path& output_path, std::vector<Object>& objects)
 {
