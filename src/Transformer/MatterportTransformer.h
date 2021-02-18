@@ -14,11 +14,6 @@ namespace fs = std::filesystem;
 class MatterportTransformer
 {
 private:
-	static void handle_region(
-			const fs::path& region_path,
-			const std::string& region,
-			const fs::path& output_path);
-
 	static void handle_house(
 			const fs::path& house_path,
 			const std::string& house_name,
