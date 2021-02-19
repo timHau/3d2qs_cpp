@@ -12,6 +12,12 @@
 
 namespace fs = std::filesystem;
 
+struct Face
+{
+	int seg_ind; // index of the segment that this face is contained in
+	std::vector<std::vector<double>> vertices; // 3 vertices that build the face
+};
+
 struct Obj
 {
 	std::string category_index;
@@ -23,6 +29,8 @@ struct Obj
 	std::vector<double> axes_length;
 	std::vector<double> dominant_normal;
 	std::vector<double> normalized_axes;
+	std::vector<Face> faces;
+	std::vector<std::vector<double>> bbox;
 };
 
 class MatterportTransformer
@@ -50,6 +58,7 @@ private:
 			std::map<std::string, std::vector<std::string>>& house,
 			const fs::path& house_path,
 			const std::string& house_name,
+			const fs::path& matterport_path,
 			std::string& region_id
 	);
 

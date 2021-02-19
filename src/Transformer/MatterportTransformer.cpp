@@ -23,7 +23,7 @@ void MatterportTransformer::handle_house(
 		// get all objects in that region
 		std::string region_id = std::to_string(i);
 		std::cout << "get all objects for region" << region_id << std::endl;
-		auto objects_per_region = get_objects_per_region(house, house_path, house_name, region_id);
+		auto objects_per_region = get_objects_per_region(house, house_path, house_name, matterport_path, region_id);
 
 
 		// create a folder inside the config folder and create a .toml for every region
@@ -60,9 +60,19 @@ void MatterportTransformer::write_objects_to_toml(
 		for (int i = 0; i < transform.size(); ++i)
 			transform_array->push_back(*(t.data() + i));
 
-		object_table->insert("transform", transform_array);
+		auto bbox_array = cpptoml::make_array();
+		for (const std::vector<double>& v : obj.bbox)
+		{
+			auto row_array = cpptoml::make_array();
+			for (auto v_i : v)
+				row_array->push_back(v_i);
+			bbox_array->push_back(row_array);
+		}
+
+		object_table->insert("bbox", bbox_array);
 		object_table->insert("id", obj.object_index);
 		object_table->insert("label", obj.catergory_name);
+		object_table->insert("transform", transform_array);
 		object_table_array->push_back(object_table);
 	}
 
@@ -80,14 +90,10 @@ std::vector<Obj> MatterportTransformer::get_objects_per_region(
 		std::map<std::string, std::vector<std::string>>& house,
 		const fs::path& house_path,
 		const std::string& house_name,
+		const fs::path& matterport_path,
 		std::string& region_id
 )
 {
-	std::ifstream semseg_stream(house_path / (house_name + ".semseg.json"));
-	nlohmann::json semseg_json;
-	semseg_stream >> semseg_json;
-	auto seg_groups = semseg_json["segGroups"];
-
 	std::vector<Obj> objects_per_region;
 	for (const auto& obj_line : house["object_indices"])
 	{
@@ -106,14 +112,45 @@ std::vector<Obj> MatterportTransformer::get_objects_per_region(
 		}
 	}
 
-	for (Obj& o : objects_per_region)
+	std::ifstream semseg_stream(house_path / (house_name + ".semseg.json"));
+	nlohmann::json semseg_json;
+	semseg_stream >> semseg_json;
+	auto seg_groups = semseg_json["segGroups"];
+
+	const fs::path region_path = matterport_path / "region_segmentations";
+	std::ifstream fseg_stream(region_path / ("region" + region_id + ".fsegs.json"));
+	nlohmann::json fseg_json;
+	fseg_stream >> fseg_json;
+	std::vector<int> fseg_indices = fseg_json["segIndices"];
+
+	happly::PLYData ply_file(region_path / ("region" + region_id + ".ply"));
+	std::vector<double> vert_x = ply_file.getElement("vertex").getProperty<double>("x");
+	std::vector<double> vert_y = ply_file.getElement("vertex").getProperty<double>("y");
+	std::vector<double> vert_z = ply_file.getElement("vertex").getProperty<double>("z");
+	std::vector<std::vector<int>> vertex_indices = ply_file.getElement("face").getListProperty<int>("vertex_indices");
+
+	// every entry in the array 'segIndices' corresponds to one face
+	// the i-th face is contained in the segment with id segIndices[i]
+	std::vector<Face> faces_per_region;
+	for (int i = 0; i < fseg_indices.size(); ++i)
+	{
+		// the value 'vertex_indices' inside the .ply corresponds to the index of 3 vertices inside the face
+		std::vector<std::vector<double>> vertices;
+		for (const int idx : vertex_indices[i])
+			vertices.push_back({ vert_x[idx], vert_y[idx], vert_z[idx] });
+		auto seg_ind = fseg_indices[i];
+		Face f{ seg_ind, vertices };
+		faces_per_region.emplace_back(f);
+	}
+
+	for (Obj& obj : objects_per_region)
 	{
 		// find the right category matching category_index
 		for (const auto& category_line : house["category_indices"])
 		{
 			auto splited_cat = split_line(category_line);
-			if (o.category_index == splited_cat[1])
-				o.catergory_name = splited_cat[3];
+			if (obj.category_index == splited_cat[1])
+				obj.catergory_name = splited_cat[3];
 		}
 
 		std::vector<int> segment_indices;
@@ -121,25 +158,68 @@ std::vector<Obj> MatterportTransformer::get_objects_per_region(
 		for (const auto& segment_line : house["segment_indices"])
 		{
 			auto splited_seg = split_line(segment_line);
-			if (o.object_index == splited_seg[2])
+			if (obj.object_index == splited_seg[2])
 				segment_indices.push_back(std::stoi(splited_seg[1]));
 		}
-		o.segments_indices = segment_indices;
+		obj.segments_indices = segment_indices;
 
+		// find centroid / axes length / dominant normal / normalized axes
 		for (const auto& seg_group : seg_groups)
 		{
-			if (seg_group["id"] == std::stoi(o.object_index))
+			if (seg_group["id"] == std::stoi(obj.object_index))
 			{
 				std::vector<double> centroid = seg_group["obb"]["centroid"];
 				std::vector<double> axes_length = seg_group["obb"]["axesLengths"];
 				std::vector<double> dominant_normal = seg_group["obb"]["dominantNormal"];
 				std::vector<double> normalized_axes = seg_group["obb"]["normalizedAxes"];
-				o.centroid = centroid;
-				o.axes_length = axes_length;
-				o.dominant_normal = dominant_normal;
-				o.normalized_axes = normalized_axes;
+				obj.centroid = centroid;
+				obj.axes_length = axes_length;
+				obj.dominant_normal = dominant_normal;
+				obj.normalized_axes = normalized_axes;
 			}
 		}
+
+
+
+		// get the faces (vector of vertices) of each object
+		std::vector<Face> faces_per_object;
+		for (const int seg_id : obj.segments_indices)
+		{
+			for (const Face& f : faces_per_region)
+			{
+				if (f.seg_ind == seg_id)
+					faces_per_object.emplace_back(f);
+			}
+		}
+
+		// calculate the bounding box
+		double min_x = std::numeric_limits<double>::infinity(), max_x = -std::numeric_limits<double>::infinity();
+		double min_y = std::numeric_limits<double>::infinity(), max_y = -std::numeric_limits<double>::infinity();
+		double min_z = std::numeric_limits<double>::infinity(), max_z = -std::numeric_limits<double>::infinity();
+		for (const Face& f : faces_per_object)
+		{
+			for (const std::vector<double>& vertex : f.vertices)
+			{
+				if (vertex[0] < min_x) min_x = vertex[0];
+				if (vertex[0] > max_x) max_x = vertex[0];
+				if (vertex[1] < min_y) min_y = vertex[1];
+				if (vertex[1] > max_y) max_y = vertex[1];
+				if (vertex[2] < min_z) min_z = vertex[2];
+				if (vertex[2] > max_z) max_z = vertex[2];
+			}
+		}
+
+		std::vector<std::vector<double>> bbox = {
+				{ min_x, min_y, max_z },  // vorne, unten, links
+				{ max_x, min_y, max_z },  // vorne, unten, rechts
+				{ max_x, max_y, max_z },  // vorne, oben, rechts
+				{ min_x, max_y, max_z },  // vorne, oben, links
+				{ min_x, min_y, min_z },  // hinten, unten, links
+				{ max_x, min_y, min_z },  // hinten, unten, rechts
+				{ max_x, max_y, min_z },  // hinten, oben, rechts
+				{ min_x, max_y, min_z },  // hinten, oben, links
+		};
+		obj.bbox = bbox;
 	}
 
 	return objects_per_region;
