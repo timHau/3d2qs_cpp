@@ -1,69 +1,111 @@
 #include "MatterportTransformer.h"
 
-struct Obj {
-	std::string category_index;
-	std::vector<double> obb;
-	std::string catergory_name;
-};
-
 void MatterportTransformer::transform(const std::string& path)
 {
 	const fs::path matterport_path(path);
-	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
 	const std::string house_name = "1pXnuDYAj8r";
+	const fs::path house_path = matterport_path / "house_segmentations";
+	std::cout << "start parsing " << house_name << " (matterport)" << std::endl;
+	auto house = read_house_file(house_path, house_name);
+	handle_house(house, matterport_path, house_name);
+}
 
-	handle_house(matterport_path, house_name, root);
+void MatterportTransformer::handle_house(
+		std::map<std::string, std::vector<std::string>>& house,
+		const fs::path& matterport_path,
+		const std::string& house_name
+)
+{
+	// for every region in the house
+	for (int i = 0; i < house["region_indices"].size(); ++i)
+	{
+		// get all objects in that region
+		std::string region_id = std::to_string(i);
+		std::cout << "get all objects for region" << region_id << std::endl;
+		auto objects_per_region = get_objects_per_region(house, region_id);
 
-	const fs::path output_path = matterport_path / "config" / (house_name + ".toml");
+		// create a folder inside the config folder and create a .toml for every region
+		const std::string region_name = "region" + region_id;
+		const fs::path config_dir = matterport_path / "config" / (house_name + "_" + region_name);
+		if (!fs::exists(config_dir))
+			fs::create_directory(config_dir);
+		write_objects_to_toml(objects_per_region, config_dir, region_name);
+	}
+}
+
+void MatterportTransformer::write_objects_to_toml(
+		std::vector<Obj>& objects,
+		const fs::path& config_dir,
+		const std::string& region_name
+		)
+{
+	std::shared_ptr<cpptoml::table> region_root = cpptoml::make_table();
+	auto object_table_array = cpptoml::make_table_array();
+
+	for (Obj& obj : objects)
+	{
+		auto object_table = cpptoml::make_table();
+//		object_table->insert("bbox", bbox_array);
+		object_table->insert("id", obj.object_index);
+		object_table->insert("label", obj.catergory_name);
+		object_table_array->push_back(object_table);
+	}
+
+	region_root->insert("object", object_table_array);
+
+	const fs::path output_path = config_dir / (region_name + ".toml");
 	std::ofstream output;
 	output.open(output_path);
-	output << (*root);
+	output << (*region_root);
 	output.close();
 	std::cout << "wrote: " << output_path << std::endl;
 }
 
-void MatterportTransformer::handle_house(
-		const fs::path& matterport_path,
-		const std::string& house_name,
-		const std::shared_ptr<cpptoml::table>& root
+std::vector<Obj> MatterportTransformer::get_objects_per_region(
+		std::map<std::string, std::vector<std::string>>& house,
+		std::string& region_id
 )
 {
-	const fs::path house_path = matterport_path / "house_segmentations";
-	std::cout << "start parsing " << house_name << std::endl;
-
-	auto house = read_house_file(house_path, house_name);
-
-	// for every region in the house
-	for (int i = 0; i < house["region_indices"].size(); ++i)
+	std::vector<Obj> objects_per_region;
+	for (const auto& obj_line : house["object_indices"])
 	{
-		std::string region_id = std::to_string(i);
-		// for every object in the region
-		std::vector<Obj> objects_per_region;
-		for (const auto& obj_line : house["object_indices"])
+		auto splited_obj = split_line(obj_line);
+		if (region_id == splited_obj[2])
 		{
-			auto splited_obj = split_line(obj_line);
-			if (region_id == splited_obj[2])
-			{
-				auto category_index = splited_obj[3];
-				auto obb = std::vector<double>(4, 15);
-				Obj o{category_index, obb};
-				objects_per_region.push_back(o);
-			}
-		}
+			auto category_index = splited_obj[3];
+			auto object_index = splited_obj[1];
+			auto obb_str = std::vector<std::string>(splited_obj.begin() + 4, splited_obj.begin() + 15);
 
-		// find the right category matching category_index
-		for (Obj& o : objects_per_region)
-		{
-			for (const auto& category_line : house["category_indices"])
-			{
-				auto splited_cat = split_line(category_line);
-				if (o.category_index == splited_cat[1])
-					o.catergory_name = splited_cat[3];
-			}
+			std::vector<double> obb_d(obb_str.size());
+			std::transform(obb_str.begin(), obb_str.end(), obb_d.begin(), [](const std::string& val) { return std::stod(val); });
+
+			Obj o{ category_index, object_index, obb_d };
+			objects_per_region.push_back(o);
 		}
 	}
-}
 
+	for (Obj& o : objects_per_region)
+	{
+		// find the right category matching category_index
+		for (const auto& category_line : house["category_indices"])
+		{
+			auto splited_cat = split_line(category_line);
+			if (o.category_index == splited_cat[1])
+				o.catergory_name = splited_cat[3];
+		}
+
+		std::vector<int> segment_indices;
+		// find all segment_indices that are part of that object
+		for (const auto& segment_line : house["segment_indices"])
+		{
+			auto splited_seg = split_line(segment_line);
+			if (o.object_index == splited_seg[2])
+				segment_indices.push_back(std::stoi(splited_seg[1]));
+		}
+		o.segments_indices = segment_indices;
+	}
+	return objects_per_region;
+}
 
 std::map<std::string, std::vector<std::string>> MatterportTransformer::read_house_file(
 		const fs::path& house_path,
@@ -167,3 +209,5 @@ std::vector<std::string> MatterportTransformer::get_column_tsv(const std::string
 
 	return res;
 }
+
+
