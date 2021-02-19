@@ -78,6 +78,10 @@ void MatterportTransformer::write_objects_to_toml(
 
 	region_root->insert("object", object_table_array);
 
+	auto meta_table = cpptoml::make_table();
+	meta_table->insert("name", region_name);
+	region_root->insert("dataset", meta_table);
+
 	const fs::path output_path = config_dir / (region_name + ".toml");
 	std::ofstream output;
 	output.open(output_path);

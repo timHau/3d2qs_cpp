@@ -70,11 +70,11 @@ void DebugExporter::handle_toml(
 		}
 
 		const fs::path debug_path("../data/3d_objects_debug/");
-		const fs::path dir_path = debug_path / (dataset_name + "/") / room_id;
+		const fs::path dir_path = debug_path / dataset_name;
 		if (!fs::exists(dir_path))
 		{
-			std::cout << "created directory: " << dir_path << std::endl;
 			fs::create_directory(dir_path);
+			std::cout << "created directory: " << dir_path << std::endl;
 		}
 		const std::string filename = "/" + id + "_" + label + ".ply";
 		const std::string output_path = dir_path.string() + filename;
