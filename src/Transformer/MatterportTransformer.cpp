@@ -7,12 +7,13 @@ void MatterportTransformer::transform(const std::string& path)
 	const fs::path house_path = matterport_path / "house_segmentations";
 	std::cout << "start parsing " << house_name << " (matterport)" << std::endl;
 	auto house = read_house_file(house_path, house_name);
-	handle_house(house, matterport_path, house_name);
+	handle_house(house, matterport_path, house_path, house_name);
 }
 
 void MatterportTransformer::handle_house(
 		std::map<std::string, std::vector<std::string>>& house,
 		const fs::path& matterport_path,
+		const fs::path& house_path,
 		const std::string& house_name
 )
 {
@@ -22,7 +23,8 @@ void MatterportTransformer::handle_house(
 		// get all objects in that region
 		std::string region_id = std::to_string(i);
 		std::cout << "get all objects for region" << region_id << std::endl;
-		auto objects_per_region = get_objects_per_region(house, region_id);
+		auto objects_per_region = get_objects_per_region(house, house_path, house_name, region_id);
+
 
 		// create a folder inside the config folder and create a .toml for every region
 		const std::string region_name = "region" + region_id;
@@ -45,7 +47,20 @@ void MatterportTransformer::write_objects_to_toml(
 	for (Obj& obj : objects)
 	{
 		auto object_table = cpptoml::make_table();
-//		object_table->insert("bbox", bbox_array);
+		// create transform matrix from obb
+		// ref: https://stackoverflow.com/questions/53227533/how-to-find-out-the-rotation-matrix-for-the-oriented-bounding-box
+		Eigen::Matrix<double, 4, 4, Eigen::ColMajor> t;
+		t << obj.normalized_axes[0], obj.normalized_axes[1], obj.normalized_axes[2], 0.0,
+			 obj.normalized_axes[3], obj.normalized_axes[4], obj.normalized_axes[5], 0.0,
+			 obj.normalized_axes[5], obj.normalized_axes[6], obj.normalized_axes[7], 0.0,
+			 obj.centroid[0],        obj.centroid[1],        obj.centroid[2],        1.0;
+		auto transform = t.inverse();
+
+		auto transform_array = cpptoml::make_array();
+		for (int i = 0; i < transform.size(); ++i)
+			transform_array->push_back(*(t.data() + i));
+
+		object_table->insert("transform", transform_array);
 		object_table->insert("id", obj.object_index);
 		object_table->insert("label", obj.catergory_name);
 		object_table_array->push_back(object_table);
@@ -63,9 +78,16 @@ void MatterportTransformer::write_objects_to_toml(
 
 std::vector<Obj> MatterportTransformer::get_objects_per_region(
 		std::map<std::string, std::vector<std::string>>& house,
+		const fs::path& house_path,
+		const std::string& house_name,
 		std::string& region_id
 )
 {
+	std::ifstream semseg_stream(house_path / (house_name + ".semseg.json"));
+	nlohmann::json semseg_json;
+	semseg_stream >> semseg_json;
+	auto seg_groups = semseg_json["segGroups"];
+
 	std::vector<Obj> objects_per_region;
 	for (const auto& obj_line : house["object_indices"])
 	{
@@ -103,7 +125,23 @@ std::vector<Obj> MatterportTransformer::get_objects_per_region(
 				segment_indices.push_back(std::stoi(splited_seg[1]));
 		}
 		o.segments_indices = segment_indices;
+
+		for (const auto& seg_group : seg_groups)
+		{
+			if (seg_group["id"] == std::stoi(o.object_index))
+			{
+				std::vector<double> centroid = seg_group["obb"]["centroid"];
+				std::vector<double> axes_length = seg_group["obb"]["axesLengths"];
+				std::vector<double> dominant_normal = seg_group["obb"]["dominantNormal"];
+				std::vector<double> normalized_axes = seg_group["obb"]["normalizedAxes"];
+				o.centroid = centroid;
+				o.axes_length = axes_length;
+				o.dominant_normal = dominant_normal;
+				o.normalized_axes = normalized_axes;
+			}
+		}
 	}
+
 	return objects_per_region;
 }
 

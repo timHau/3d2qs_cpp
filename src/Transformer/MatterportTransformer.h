@@ -7,6 +7,7 @@
 #include <string>
 #include "json.hpp"
 #include "cpptoml.h"
+#include <Eigen/Dense>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -18,6 +19,10 @@ struct Obj
 	std::vector<double> obb;
 	std::string catergory_name;
 	std::vector<int> segments_indices;
+	std::vector<double> centroid;
+	std::vector<double> axes_length;
+	std::vector<double> dominant_normal;
+	std::vector<double> normalized_axes;
 };
 
 class MatterportTransformer
@@ -26,6 +31,7 @@ private:
 	static void handle_house(
 			std::map<std::string, std::vector<std::string>>& house,
 			const fs::path& matterport_path,
+			const fs::path& house_path,
 			const std::string& house_name
 	);
 
@@ -42,6 +48,8 @@ private:
 
 	static std::vector<Obj> get_objects_per_region(
 			std::map<std::string, std::vector<std::string>>& house,
+			const fs::path& house_path,
+			const std::string& house_name,
 			std::string& region_id
 	);
 
