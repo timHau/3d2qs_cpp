@@ -8,6 +8,9 @@ void DebugExporter::to_ply(const fs::path& input_dir)
 {
 	// read .toml file and write them into an .ply file. Useful for debugging
 
+	if (!fs::exists(input_dir))
+		throw std::invalid_argument("input dir does not exists");
+
 	for (const auto& config : fs::directory_iterator(input_dir))
 	{
 		const std::string toml_file = config.path().filename();
@@ -25,10 +28,7 @@ void DebugExporter::to_ply(const fs::path& input_dir)
 	}
 }
 
-void DebugExporter::handle_toml(
-		const fs::path& toml_path,
-		const std::string& room_id
-)
+void DebugExporter::handle_toml(const fs::path& toml_path, const std::string& room_id)
 {
 	auto config = cpptoml::parse_file(toml_path);
 
@@ -76,7 +76,7 @@ void DebugExporter::handle_toml(
 			fs::create_directory(dir_path);
 			std::cout << "created directory: " << dir_path << std::endl;
 		}
-		const std::string filename = "/" + id + "_" + label + ".ply";
+		const std::string filename = "/" + id + "_" + label + "_bbox" + ".ply";
 		const std::string output_path = dir_path.string() + filename;
 
 		plyOut.addVertexPositions(vertices_bbox);
