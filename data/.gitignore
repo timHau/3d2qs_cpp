@@ -1,0 +1,5 @@
+# Ignore everything in this directory
+*
+!.gitignore
+!datasets/
+!3d_objects_debug/
