@@ -48,7 +48,7 @@ void MatterportTransformer::handle_house(
 	{
 		// each seg_group represents one object
 		int id = seg_group["id"];
-		int label_index = seg_group["label_index"];
+		std::string label = all_categories[seg_group["label_index"]];
 		std::vector<double> centroid = seg_group["obb"]["centroid"];
 		std::vector<double> axes_lengths = seg_group["obb"]["axesLengths"];
 		std::vector<double> dominant_normal = seg_group["obb"]["dominantNormal"];
@@ -60,7 +60,7 @@ void MatterportTransformer::handle_house(
 			segments.push_back(all_segs[seg_index]);
 
 		Obj obj{
-				id, label_index,
+				id, label,
 				centroid, axes_lengths,
 				dominant_normal, normalized_axes,
 				segments,
@@ -71,6 +71,9 @@ void MatterportTransformer::handle_house(
 		object_table_array->push_back(as_toml);
 
 		root->insert("object", object_table_array);
+
+		const fs::path config_obj_dir = matterport_path / "objects";
+		write_object_to_ply(obj, config_obj_dir);
 	}
 	std::cout << "finished collecting objects" << std::endl;
 }
@@ -186,7 +189,7 @@ std::shared_ptr<cpptoml::table> MatterportTransformer::object_to_toml(Obj& obj, 
 
 	object_table->insert("bbox", bbox_array);
 	object_table->insert("id", std::to_string(obj.id));
-	object_table->insert("label", all_categories[obj.label_index]);
+	object_table->insert("label", obj.label);
 	object_table->insert("transform", transform_array);
 	return object_table;
 }
@@ -213,11 +216,8 @@ std::vector<std::string> MatterportTransformer::get_all_categories(const fs::pat
 	return res;
 }
 
-void MatterportTransformer::write_objects_to_ply(std::vector<Obj>& objects_per_region, const fs::path& config_obj_dir)
+void MatterportTransformer::write_object_to_ply(Obj& obj, const fs::path& config_obj_dir)
 {
-	/*
-	for (auto& obj: objects_per_region)
-	{
 		std::vector<double> vert_x_out;
 		std::vector<double> vert_y_out;
 		std::vector<double> vert_z_out;
@@ -228,11 +228,11 @@ void MatterportTransformer::write_objects_to_ply(std::vector<Obj>& objects_per_r
 		{
 			for (auto& face : segment.faces)
 			{
-				for (auto& vertex : face.vertices)
+				for (int i = 0; i < 9; i += 3)
 				{
-					vert_x_out.push_back(vertex[0]);
-					vert_y_out.push_back(vertex[1]);
-					vert_z_out.push_back(vertex[2]);
+					vert_x_out.push_back(face.vertices[i+0]);
+					vert_y_out.push_back(face.vertices[i+1]);
+					vert_z_out.push_back(face.vertices[i+2]);
 				}
 
 				std::vector<int> vert_index{ index_count, index_count + 1, index_count + 2 };
@@ -241,7 +241,7 @@ void MatterportTransformer::write_objects_to_ply(std::vector<Obj>& objects_per_r
 			}
 		}
 
-		const fs::path obj_path = config_obj_dir / (obj.object_index + "_" + obj.catergory_name + ".ply");
+		const fs::path obj_path = config_obj_dir / (std::to_string(obj.id) + "_" + obj.label + ".ply");
 
 		// write each object as a .ply
 		happly::PLYData objectPly;
@@ -251,8 +251,6 @@ void MatterportTransformer::write_objects_to_ply(std::vector<Obj>& objects_per_r
 		objectPly.getElement("vertex").addProperty<double>("y", vert_y_out);
 		objectPly.getElement("vertex").addProperty<double>("z", vert_z_out);
 		objectPly.getElement("face").addListProperty<int>("vertex_indices", vert_indices_out);
-		objectPly.write(config_obj_dir);
-		std::cout << "wrote: " << config_obj_dir << std::endl;
-	}
-	*/
+		objectPly.write(obj_path);
+		std::cout << "wrote: " << obj_path << std::endl;
 }

@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
 
 int main()
 {
-	SUNCTransformer::transform("../data/datasets/sunc/");
+	// SUNCTransformer::transform("../data/datasets/sunc/");
 	MatterportTransformer::transform("../data/datasets/matterport3d/");
 
 	/*
@@ -41,7 +41,7 @@ int main()
 
 	/*
 	DebugExporter::to_ply("../data/datasets/sunc/config/");
-	DebugExporter::to_ply("../data/datasets/matterport3d/config/1pXnuDYAj8r_region0");
+	DebugExporter::to_ply("../data/datasets/matterport3d/config/");
 	 */
 
 	/*

@@ -28,7 +28,7 @@ struct Segment
 struct Obj
 {
 	int id;
-	int label_index;
+	std::string label;
 	std::vector<double> centroid;
 	std::vector<double> axes_length;
 	std::vector<double> dominant_normal;
@@ -41,11 +41,7 @@ struct Obj
 class MatterportTransformer
 {
 private:
-	static void handle_house(
-			std::shared_ptr<cpptoml::table>& root,
-			const fs::path& matterport_path,
-			const std::string& house_name
-	);
+	static void handle_house(std::shared_ptr<cpptoml::table>& root, const fs::path& matterport_path, const std::string& house_name);
 
 	static std::shared_ptr<cpptoml::table> object_to_toml(Obj& obj, std::vector<std::string>& all_categories);
 
@@ -55,7 +51,7 @@ private:
 
 	static std::vector<std::string> get_all_categories(const fs::path& matterport_path);
 
-	static void write_objects_to_ply(std::vector<Obj>& objects_per_region, const fs::path& config_obj_dir);
+	static void write_object_to_ply(Obj& obj, const fs::path& config_obj_dir);
 
 
 public:
