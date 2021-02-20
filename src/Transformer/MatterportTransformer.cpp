@@ -24,8 +24,7 @@ void MatterportTransformer::transform(const std::string& path)
 void MatterportTransformer::handle_house(
 		std::shared_ptr<cpptoml::table>& root,
 		const fs::path& matterport_path,
-		const std::string& house_name
-)
+		const std::string& house_name)
 {
 	const fs::path house_path = matterport_path / "house_segmentations";
 
@@ -48,7 +47,10 @@ void MatterportTransformer::handle_house(
 	{
 		// each seg_group represents one object
 		int id = seg_group["id"];
-		std::string label = all_categories[seg_group["label_index"]];
+		int label_index = seg_group["label_index"];
+		if (label_index == 40) // skip over unknown objects
+			continue;
+		std::string label = all_categories[label_index];
 		std::vector<double> centroid = seg_group["obb"]["centroid"];
 		std::vector<double> axes_lengths = seg_group["obb"]["axesLengths"];
 		std::vector<double> dominant_normal = seg_group["obb"]["dominantNormal"];
@@ -59,12 +61,7 @@ void MatterportTransformer::handle_house(
 		for (int seg_index : segment_indices)
 			segments.push_back(all_segs[seg_index]);
 
-		Obj obj{
-				id, label,
-				centroid, axes_lengths,
-				dominant_normal, normalized_axes,
-				segments,
-		};
+		Obj obj{ id, label, centroid, axes_lengths, dominant_normal, normalized_axes, segments };
 		obj.bbox = get_bbox(obj);
 
 		auto as_toml = object_to_toml(obj, all_categories);
@@ -110,10 +107,8 @@ MatterportTransformer::get_all_segments(const fs::path& house_path, const std::s
 		};
 		Face f{ seg_ind, vertices };
 		if (all_segments.find(seg_ind) != all_segments.end())
-		{
 			// segment already exists ==> add to faces
 			all_segments[seg_ind].faces.push_back(f);
-		}
 		else
 		{
 			// segment does not exists ==> create segment, add to map
@@ -162,7 +157,8 @@ std::vector<std::vector<double>> MatterportTransformer::get_bbox(Obj& obj)
 	return bbox;
 }
 
-std::shared_ptr<cpptoml::table> MatterportTransformer::object_to_toml(Obj& obj, std::vector<std::string>& all_categories)
+std::shared_ptr<cpptoml::table>
+MatterportTransformer::object_to_toml(Obj& obj, std::vector<std::string>& all_categories)
 {
 	auto object_table = cpptoml::make_table();
 	// create transform matrix from obb
@@ -218,39 +214,39 @@ std::vector<std::string> MatterportTransformer::get_all_categories(const fs::pat
 
 void MatterportTransformer::write_object_to_ply(Obj& obj, const fs::path& config_obj_dir)
 {
-		std::vector<double> vert_x_out;
-		std::vector<double> vert_y_out;
-		std::vector<double> vert_z_out;
-		std::vector<std::vector<int>> vert_indices_out;
+	std::vector<double> vert_x_out;
+	std::vector<double> vert_y_out;
+	std::vector<double> vert_z_out;
+	std::vector<std::vector<int>> vert_indices_out;
 
-		int index_count = 0;
-		for (auto& segment : obj.segments)
+	int index_count = 0;
+	for (auto& segment : obj.segments)
+	{
+		for (auto& face : segment.faces)
 		{
-			for (auto& face : segment.faces)
+			for (int i = 0; i < 9; i += 3)
 			{
-				for (int i = 0; i < 9; i += 3)
-				{
-					vert_x_out.push_back(face.vertices[i+0]);
-					vert_y_out.push_back(face.vertices[i+1]);
-					vert_z_out.push_back(face.vertices[i+2]);
-				}
-
-				std::vector<int> vert_index{ index_count, index_count + 1, index_count + 2 };
-				vert_indices_out.push_back(vert_index);
-				index_count += 3;
+				vert_x_out.push_back(face.vertices[i + 0]);
+				vert_y_out.push_back(face.vertices[i + 1]);
+				vert_z_out.push_back(face.vertices[i + 2]);
 			}
+
+			std::vector<int> vert_index{ index_count, index_count + 1, index_count + 2 };
+			vert_indices_out.push_back(vert_index);
+			index_count += 3;
 		}
+	}
 
-		const fs::path obj_path = config_obj_dir / (std::to_string(obj.id) + "_" + obj.label + ".ply");
+	const fs::path obj_path = config_obj_dir / (std::to_string(obj.id) + "_" + obj.label + ".ply");
 
-		// write each object as a .ply
-		happly::PLYData objectPly;
-		objectPly.addElement("vertex", vert_x_out.size());
-		objectPly.addElement("face", vert_indices_out.size());
-		objectPly.getElement("vertex").addProperty<double>("x", vert_x_out);
-		objectPly.getElement("vertex").addProperty<double>("y", vert_y_out);
-		objectPly.getElement("vertex").addProperty<double>("z", vert_z_out);
-		objectPly.getElement("face").addListProperty<int>("vertex_indices", vert_indices_out);
-		objectPly.write(obj_path);
-		std::cout << "wrote: " << obj_path << std::endl;
+	// write each object as a .ply
+	happly::PLYData objectPly;
+	objectPly.addElement("vertex", vert_x_out.size());
+	objectPly.addElement("face", vert_indices_out.size());
+	objectPly.getElement("vertex").addProperty<double>("x", vert_x_out);
+	objectPly.getElement("vertex").addProperty<double>("y", vert_y_out);
+	objectPly.getElement("vertex").addProperty<double>("z", vert_z_out);
+	objectPly.getElement("face").addListProperty<int>("vertex_indices", vert_indices_out);
+	objectPly.write(obj_path);
+	std::cout << "wrote: " << obj_path << std::endl;
 }

@@ -11,8 +11,6 @@ add_executable(3d2qs_sunc_cpp
         src/main.cpp
         src/Object.h
         src/Object.cpp
-        src/Object.cpp
-        src/Object.h
         src/Utils.h
         src/Transformer/SUNCTransformer.cpp
         src/Transformer/SUNCTransformer.h

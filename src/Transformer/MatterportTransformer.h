@@ -9,7 +9,6 @@
 #include "cpptoml.h"
 #include <Eigen/Dense>
 #include <filesystem>
-#include <algorithm>
 
 namespace fs = std::filesystem;
 
