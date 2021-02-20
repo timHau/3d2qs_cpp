@@ -348,42 +348,35 @@ int Object::side_of(Object& obj_b) const
 	angle_y *= 180 / M_PI;
 	angle_z *= 180 / M_PI;
 
+	// transform basis with transformation matrix
 	// project difference of centroids on each axis and get absolute value
-	Eigen::Vector3d e1(1, 0, 0);
-	Eigen::Vector3d e2(0, 1, 0);
-	Eigen::Vector3d e3(0, 0, 1);
-	auto x_len = std::abs(diff_centroids.dot(e1));
-	auto y_len = std::abs(diff_centroids.dot(e2));
-	auto z_len = std::abs(diff_centroids.dot(e3));
+	Eigen::Vector4d e1(1, 0, 0, 0);
+	Eigen::Vector4d e2(0, 1, 0, 0);
+	Eigen::Vector4d e3(0, 0, 1, 0);
+	// transformed basis vectors
+	Eigen::Vector3d b1 = (_transform * e1).head<3>();
+	Eigen::Vector3d b2 = (_transform * e2).head<3>();
+	Eigen::Vector3d b3 = (_transform * e3).head<3>();
+	auto x_len = diff_centroids.dot(b1);
+	auto y_len = diff_centroids.dot(b2);
+	auto z_len = diff_centroids.dot(b3);
 
-	// choose the direction in which diff_centroids "points the most"
-	if (x_len >= y_len && x_len >= z_len)
-	{
-		if ((0 <= angle_x && angle_x < 90) || (270 <= angle_x && angle_x < 360))
-			// difference of centroids points right ==> object is to the left
-			std::cout << "right" << std::endl;
-		else if (90 <= angle_x && angle_x < 270)
-			// difference of centroids points left ==> object is to the right
-			std::cout << "left" << std::endl;
-	}
+	std::cout << "transform:" << std::endl;
+	std::cout << _transform << std::endl;
+	std::cout << "x-axis:" << std::endl;
+	std::cout << b1 << std::endl;
+	std::cout << "------" << std::endl;
+	std::cout << "y-axis:" << std::endl;
+	std::cout << b2 << std::endl;
+	std::cout << "------" << std::endl;
+	std::cout << "z-axis:" << std::endl;
+	std::cout << b3 << std::endl;
+	std::cout << "------" << std::endl;
+	std::cout << "diff centroid:" << std::endl;
+	std::cout << diff_centroids << std::endl;
+	std::cout << "------" << std::endl;
+	std::cout << "x_len: " << x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
 
-	if (y_len >= x_len && y_len >= z_len)
-	{
-		if ((0 <= angle_y && angle_y < 90) || (270 <= angle_y && angle_y < 360))
-			// difference of centroids points back ==> object is in the front
-			std::cout << "back" << std::endl;
-		else if (90 <= angle_y && angle_y < 270)
-			// difference of centroids points front ==> object is behind
-			std::cout << "front" << std::endl;
-	}
-
-	if (z_len >= x_len && z_len >= y_len)
-	{
-		if ((0 <= angle_z && angle_z < 90) || (270 <= angle_z && angle_z < 360))
-			std::cout << "up" << std::endl;
-		else if (90 <= angle_z && angle_z < 270)
-			std::cout << "down" << std::endl;
-	}
 
 	return -1;
 }
@@ -395,10 +388,10 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 {
 	bool is_smaller = _volume < obj_b.get_volume();
 
+	/*
 	if (!is_smaller)
 		return std::nullopt;
 
-	/*
 	double distance = get_distance_to(obj_b);
 	// we only check objects that are twice the volume away
 	if (distance > _volume * 2)

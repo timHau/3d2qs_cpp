@@ -182,10 +182,10 @@ MatterportTransformer::object_to_toml(Obj& obj, std::vector<std::string>& all_ca
 	// create transform matrix from obb
 	// ref: https://stackoverflow.com/questions/53227533/how-to-find-out-the-rotation-matrix-for-the-oriented-bounding-box
 	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> t;
-	t << obj.normalized_axes[0], obj.normalized_axes[1], obj.normalized_axes[2], 0.0,
-			obj.normalized_axes[3], obj.normalized_axes[4], obj.normalized_axes[5], 0.0,
-			obj.normalized_axes[5], obj.normalized_axes[6], obj.normalized_axes[7], 0.0,
-			obj.centroid[0], obj.centroid[1], obj.centroid[2], 1.0;
+	t << obj.normalized_axes[0], obj.normalized_axes[3], obj.normalized_axes[6], obj.centroid[0],
+			obj.normalized_axes[1], obj.normalized_axes[4], obj.normalized_axes[7], obj.centroid[1],
+			obj.normalized_axes[2], obj.normalized_axes[5], obj.normalized_axes[8], obj.centroid[2],
+			0.0, 0.0, 0.0, 1.0;
 	auto transform = t.inverse();
 
 	auto transform_array = cpptoml::make_array();
