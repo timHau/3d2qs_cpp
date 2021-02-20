@@ -17,22 +17,25 @@ int main()
 	// SUNCTransformer::transform("../data/datasets/sunc/");
 	// MatterportTransformer::transform("../data/datasets/matterport3d/");
 
-	/*
-	for (auto & f : fs::directory_iterator("../data/datasets")) {
-		std::cout << f.path() << std::endl;
-	}
-	 */
+	for (auto& dir : fs::directory_iterator("../data/datasets")) {
+		const fs::path& dataset_path = dir.path();
+		const fs::path& config_path = dataset_path / "config";
 
-	/*
-	auto config = cpptoml::parse_file("../data/datasets/sunc/config/0004d52d1aeeb8ae6de39d6bd993e992.toml");
-	auto val = config->get_qualified_as<std::string>("dataset.name");
-	std::vector<Object> objects_matterport;
-	for (const auto& obj : *config->get_table_array("object"))
-	{
-		Object object{ obj };
-		objects_matterport.emplace_back(object);
+		for (auto& config_file : fs::directory_iterator(config_path))
+		{
+			 if(!(config_file.path().extension() == ".toml"))
+				 continue; // ignore all files that are not .toml
+
+			auto config = cpptoml::parse_file(config_file.path());
+			std::vector<Object> objects;
+			for (const auto& obj : *config->get_table_array("object"))
+			{
+				Object object{ obj };
+				objects.emplace_back(object);
+			}
+		}
 	}
-	 */
+
 
 	/*
 	fs::path xml_output_path_matterport("../data/datasets/matterport3d/xml/matterport3d.xml");
@@ -41,8 +44,8 @@ int main()
 
 	/*
 	DebugExporter::to_ply("../data/datasets/sunc/config/");
-	 */
 	DebugExporter::to_ply("../data/datasets/matterport3d/config/");
+	 */
 
 	/*
 	auto obj_a = objects_matterport[10];

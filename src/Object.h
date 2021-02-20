@@ -27,8 +27,9 @@ private:
 	Eigen::Vector3d _centroid;
 	double _volume;
 	BoundingBox _bbox;
+	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> _transform; // column major
 
-	bool is_equal_to(Object obj_b) const;
+	bool bbox_vertices_equal_to(Object obj_b) const;
 
 	bool is_tangent_to(Object& obj_b);
 
@@ -43,7 +44,7 @@ private:
 
 	std::pair<Eigen::Vector3d, Eigen::Vector3d> get_min_max_bbox();
 
-	double get_distance_to(Object obj_b);
+	double get_distance_to(Object& obj_b);
 
 	double get_volume() const;
 
@@ -75,9 +76,7 @@ public:
 
 	int count_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox);
 
-	int count_lines_inside_bb(
-			std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox
-	);
+	int count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox);
 
 };
 

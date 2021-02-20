@@ -72,6 +72,11 @@ Object::Object(const std::shared_ptr<cpptoml::table>& obj)
 
 	_centroid = 0.5 * (A + B + C - V);
 	_volume = AV.norm() * BV.norm() * CV.norm();
+
+	// set the transformation matrix
+	std::vector<double> transform_vec = *(obj->get_array_of<double>("transform"));
+	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> transform_mat(transform_vec.data());
+	_transform = transform_mat;
 }
 
 std::vector<Eigen::Vector3d>* Object::get_bbox_vertices()
@@ -128,13 +133,16 @@ Eigen::Vector3d* Object::get_centroid()
 	return &_centroid;
 }
 
-double Object::get_distance_to(Object obj_b)
+/*
+ * gets the distance between this centroid and the centroid of obj_b
+ */
+double Object::get_distance_to(Object& obj_b)
 {
 	Eigen::Vector3d d = *obj_b.get_centroid() - _centroid;
 	return std::abs(d.norm());
 }
 
-bool Object::is_equal_to(Object obj_b) const
+bool Object::bbox_vertices_equal_to(Object obj_b) const
 {
 	return _bbox.vertices == *obj_b.get_bbox_vertices();
 }
@@ -153,6 +161,9 @@ std::optional<Eigen::Vector3d> Object::get_intersection_of_line_with_bbox(
 	return p1 + (p2 - p1) * -(dist_1 / (dist_2 - dist_1));
 }
 
+/*
+ * determine of the point p is inside this bounding box
+ */
 bool Object::is_inside_box(const Eigen::Vector3d& p)
 {
 	// get the points from bottom and top face
@@ -274,7 +285,7 @@ int Object::count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::
 std::string Object::relation_to(Object& obj_b)
 {
 	// calculates the relation to obj_b based on their bounding boxes
-	if (is_equal_to(obj_b))
+	if (bbox_vertices_equal_to(obj_b))
 		return "EQ";
 
 	// number of points from obj_b that are inside this bounding box
