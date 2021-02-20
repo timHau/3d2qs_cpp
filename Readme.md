@@ -30,10 +30,11 @@ data/
 │ 
 ├── datasets/
    ├── matterport3d/
+   │  ├── cameras/
    │  ├── config/
    │  ├── xml/
    │  ├── house_segmentations/
-   │  ├── cameras/
+   │  ├── objects/
    │  ├── metadata/
    │  └── region_segmentations/
    │
