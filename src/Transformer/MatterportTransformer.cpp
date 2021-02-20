@@ -5,6 +5,8 @@ void MatterportTransformer::transform(const std::string& path)
 	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
 
 	const fs::path matterport_path(path);
+	if (!fs::exists(matterport_path))
+		throw std::invalid_argument("matterport directory does not exist");
 	const std::string house_name = "1pXnuDYAj8r";
 	std::cout << "start parsing " << house_name << " (matterport)" << std::endl;
 
@@ -13,7 +15,10 @@ void MatterportTransformer::transform(const std::string& path)
 	auto meta_table = cpptoml::make_table();
 	meta_table->insert("name", house_name);
 	root->insert("dataset", meta_table);
-	const fs::path output_path = matterport_path / "config" / (house_name + ".toml");
+	const fs::path config_path = matterport_path / "config";
+	if (!fs::exists(config_path))
+		throw std::invalid_argument("config directory does not exist");
+	const fs::path output_path = config_path / (house_name + ".toml");
 	std::ofstream output;
 	output.open(output_path);
 	output << (*root);
@@ -27,16 +32,25 @@ void MatterportTransformer::handle_house(
 		const std::string& house_name)
 {
 	const fs::path house_path = matterport_path / "house_segmentations";
+	if (!fs::exists(house_path))
+		throw std::invalid_argument("house segmentations directory does not exist");
 
 	// get all segments in the house
 	std::cout << "start building segments " << std::endl;
 	std::map<int, Segment> all_segs = get_all_segments(house_path, house_name);
 	std::cout << "finished building: " << all_segs.size() << " segments" << std::endl;
 
-	std::ifstream semseg_house_stream(house_path / (house_name + ".semseg.json"));
+	const fs::path semseg_path = house_path / (house_name + ".semseg.json");
+	if (!fs::exists(semseg_path))
+		throw std::invalid_argument("house .semseg.json does not exist");
+	std::ifstream semseg_house_stream(semseg_path);
 	nlohmann::json semseg_house_json;
 	semseg_house_stream >> semseg_house_json;
 	auto seg_groups = semseg_house_json["segGroups"];
+
+	const fs::path config_obj_dir = matterport_path / "objects";
+	if (!fs::exists(config_obj_dir))
+		fs::create_directory(config_obj_dir);
 
 	// get all categories
 	auto all_categories = get_all_categories(matterport_path);
@@ -48,7 +62,7 @@ void MatterportTransformer::handle_house(
 		// each seg_group represents one object
 		int id = seg_group["id"];
 		int label_index = seg_group["label_index"];
-		if (label_index == 40) // skip over unknown objects
+		if (label_index == 40 || label_index < 0) // skip over unknown objects
 			continue;
 		std::string label = all_categories[label_index];
 		std::vector<double> centroid = seg_group["obb"]["centroid"];
@@ -57,7 +71,6 @@ void MatterportTransformer::handle_house(
 		std::vector<double> normalized_axes = seg_group["obb"]["normalizedAxes"];
 		std::vector<int> segment_indices = seg_group["segments"];
 		std::vector<Segment> segments;
-		segments.reserve(segment_indices.size());
 		for (int seg_index : segment_indices)
 			segments.push_back(all_segs[seg_index]);
 
@@ -69,7 +82,6 @@ void MatterportTransformer::handle_house(
 
 		root->insert("object", object_table_array);
 
-		const fs::path config_obj_dir = matterport_path / "objects";
 		write_object_to_ply(obj, config_obj_dir);
 	}
 	std::cout << "finished collecting objects" << std::endl;
@@ -79,13 +91,19 @@ std::map<int, Segment>
 MatterportTransformer::get_all_segments(const fs::path& house_path, const std::string& house_name)
 {
 	// get face information
-	std::ifstream fseg_stream(house_path / (house_name + ".fsegs.json"));
+	const fs::path fseg_path = house_path / (house_name + ".fsegs.json");
+	if (!fs::exists(fseg_path))
+		throw std::invalid_argument("house .fsegs.json does not exists");
+	std::ifstream fseg_stream(fseg_path);
 	nlohmann::json fseg_json;
 	fseg_stream >> fseg_json;
 	std::vector<int> fseg_indices = fseg_json["segIndices"];
 
 	std::cout << "start loading house: " << house_name << ".ply" << std::endl;
-	happly::PLYData ply_file(house_path / (house_name + ".ply"));
+	const fs::path house_ply_path = house_path / (house_name + ".ply");
+	if (!fs::exists(house_ply_path))
+		throw std::invalid_argument("house .ply does not exists");
+	happly::PLYData ply_file(house_ply_path);
 	std::vector<double> vert_x = ply_file.getElement("vertex").getProperty<double>("x");
 	std::vector<double> vert_y = ply_file.getElement("vertex").getProperty<double>("y");
 	std::vector<double> vert_z = ply_file.getElement("vertex").getProperty<double>("z");
@@ -192,7 +210,12 @@ MatterportTransformer::object_to_toml(Obj& obj, std::vector<std::string>& all_ca
 
 std::vector<std::string> MatterportTransformer::get_all_categories(const fs::path& matterport_path)
 {
-	std::string file_name = matterport_path / "metadata" / "category_mapping.tsv";
+	const fs::path metadata_dir = matterport_path / "metadata";
+	if (!fs::exists(metadata_dir))
+		throw std::invalid_argument("metadata directory does not exist");
+	std::string file_name = metadata_dir / "category_mapping.tsv";
+	if (!fs::exists(file_name))
+		throw std::invalid_argument("category mapping does not exist");
 	std::vector<std::string> res = {};
 
 	std::ifstream file(file_name);

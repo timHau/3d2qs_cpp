@@ -3,10 +3,12 @@
 
 #include "cpptoml.h"
 #include <Eigen/Dense>
+#include <iostream>
 #include <optional>
 #include <tinyxml2.h>
 
 #define _USE_MATH_DEFINES // for C++
+
 #include <cmath>
 
 struct BoundingBox
@@ -30,8 +32,7 @@ private:
 
 	bool is_tangent_to(Object& obj_b);
 
-	static std::optional<Eigen::Vector3d>
-	get_intersection_of_line_with_bbox(
+	static std::optional<Eigen::Vector3d> get_intersection_of_line_with_bbox(
 			double dist_1,
 			double dist_2,
 			const Eigen::Vector3d& p1,

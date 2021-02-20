@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Object.h"
 
 Object::Object(const std::shared_ptr<cpptoml::table>& obj)
@@ -143,18 +142,14 @@ bool Object::is_equal_to(Object obj_b) const
 /*
  * return the point of intersection between a line and the bounding box
  */
-std::optional<Eigen::Vector3d>
-Object::get_intersection_of_line_with_bbox(
+std::optional<Eigen::Vector3d> Object::get_intersection_of_line_with_bbox(
 		double dist_1,
 		double dist_2,
 		const Eigen::Vector3d& p1,
-		const Eigen::Vector3d& p2
-)
+		const Eigen::Vector3d& p2)
 {
 	if (dist_1 == dist_2)
-	{
 		return std::nullopt;
-	}
 	return p1 + (p2 - p1) * -(dist_1 / (dist_2 - dist_1));
 }
 
@@ -187,9 +182,7 @@ int Object::count_inside_bb(std::vector<Eigen::Vector3d>& obj_b_bbox)
 	for (const Eigen::Vector3d& P : obj_b_bbox)
 	{
 		if (is_inside_box(P))
-		{
 			count++;
-		}
 	}
 	return count;
 }
@@ -212,9 +205,7 @@ bool Object::is_tangent_to(Object& obj_b)
 			// test if this vector is one the plane <==>  <(a-v), normal> = 0
 			bool is_inside_plane = false;
 			if (av.dot(_bbox.normals[i]) == 0)
-			{
 				is_inside_plane = true;
-			}
 
 			if (is_inside_plane)
 			{
@@ -225,9 +216,7 @@ bool Object::is_tangent_to(Object& obj_b)
 				bool t_1 = b.dot(ab) < v.dot(ab) && v.dot(ab) < a.dot(ab);
 				bool t_2 = b.dot(cb) < v.dot(cb) && v.dot(cb) < c.dot(cb);
 				if (t_1 && t_2)
-				{
 					is_inside = true;
-				}
 			}
 		}
 	}
@@ -238,9 +227,7 @@ bool Object::is_tangent_to(Object& obj_b)
 /*
  * count how often the lines of the bounding box of object b intersect with the this bounding box
  */
-int Object::count_lines_inside_bb(
-		std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox
-)
+int Object::count_lines_inside_bb(std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>>& obj_b_lines_bbox)
 {
 	int count = 0;
 	for (auto& line : obj_b_lines_bbox)
@@ -278,9 +265,7 @@ int Object::count_lines_inside_bb(
 		for (auto intersection : possible_interesctions)
 		{
 			if (intersection && is_inside_box(*intersection))
-			{
 				count++;
-			}
 		}
 	}
 	return count;
@@ -290,9 +275,7 @@ std::string Object::relation_to(Object& obj_b)
 {
 	// calculates the relation to obj_b based on their bounding boxes
 	if (is_equal_to(obj_b))
-	{
 		return "EQ";
-	}
 
 	// number of points from obj_b that are inside this bounding box
 	int inside_count = count_inside_bb(*obj_b.get_bbox_vertices());
@@ -305,22 +288,16 @@ std::string Object::relation_to(Object& obj_b)
 	if (has_line_intersections)
 	{
 		if (is_tangent_to(obj_b))
-		{
 			return "EC";
-		}
 		else
-		{
 			return "PO";
-		}
 	}
 
 	// check obj_b contained in this bounding box
 	if (inside_count == 8)
 	{
 		if (is_tangent_to(obj_b))
-		{
 			return "TPPc";
-		}
 		return "NTTPc";
 	}
 
@@ -329,9 +306,7 @@ std::string Object::relation_to(Object& obj_b)
 	if (inside_count_c == 8)
 	{
 		if (is_tangent_to(obj_b))
-		{
 			return "TPP";
-		}
 		return "NTPP";
 	}
 
