@@ -2,6 +2,11 @@
 
 void MatterportTransformer::transform(const std::string& path)
 {
+	transform(path, false);
+}
+
+void MatterportTransformer::transform(const std::string& path, bool debug)
+{
 	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
 
 	const fs::path matterport_path(path);
@@ -10,7 +15,7 @@ void MatterportTransformer::transform(const std::string& path)
 	const std::string house_name = "1pXnuDYAj8r";
 	std::cout << "start parsing " << house_name << " (matterport)" << std::endl;
 
-	handle_house(root, matterport_path, house_name);
+	handle_house(root, matterport_path, house_name, debug);
 
 	auto meta_table = cpptoml::make_table();
 	meta_table->insert("name", house_name);
@@ -29,7 +34,8 @@ void MatterportTransformer::transform(const std::string& path)
 void MatterportTransformer::handle_house(
 		std::shared_ptr<cpptoml::table>& root,
 		const fs::path& matterport_path,
-		const std::string& house_name)
+		const std::string& house_name,
+		bool debug)
 {
 	const fs::path house_path = matterport_path / "house_segmentations";
 	if (!fs::exists(house_path))
@@ -74,7 +80,7 @@ void MatterportTransformer::handle_house(
 		for (int seg_index : segment_indices)
 			segments.push_back(all_segs[seg_index]);
 
-		Obj obj{ id, label, centroid, axes_lengths, dominant_normal, normalized_axes, segments };
+		MatterportObject obj{ id, label, centroid, axes_lengths, dominant_normal, normalized_axes, segments };
 		obj.bbox = get_bbox(obj);
 
 		auto as_toml = object_to_toml(obj, all_categories);
@@ -82,7 +88,8 @@ void MatterportTransformer::handle_house(
 
 		root->insert("object", object_table_array);
 
-		write_object_to_ply(obj, config_obj_dir);
+		if (debug)
+			write_object_to_ply(obj, config_obj_dir);
 	}
 	std::cout << "finished collecting objects" << std::endl;
 }
@@ -140,7 +147,7 @@ MatterportTransformer::get_all_segments(const fs::path& house_path, const std::s
 	return all_segments;
 }
 
-std::vector<std::vector<double>> MatterportTransformer::get_bbox(Obj& obj)
+std::vector<std::vector<double>> MatterportTransformer::get_bbox(MatterportObject& obj)
 {
 	// there should be a better way to do this, i know it is a brute force way
 
@@ -176,16 +183,16 @@ std::vector<std::vector<double>> MatterportTransformer::get_bbox(Obj& obj)
 }
 
 std::shared_ptr<cpptoml::table>
-MatterportTransformer::object_to_toml(Obj& obj, std::vector<std::string>& all_categories)
+MatterportTransformer::object_to_toml(MatterportObject& obj, std::vector<std::string>& all_categories)
 {
 	auto object_table = cpptoml::make_table();
 	// create transform matrix from obb
 	// ref: https://stackoverflow.com/questions/53227533/how-to-find-out-the-rotation-matrix-for-the-oriented-bounding-box
 	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> t;
 	t << obj.normalized_axes[0], obj.normalized_axes[3], obj.normalized_axes[6], obj.centroid[0],
-			obj.normalized_axes[1], obj.normalized_axes[4], obj.normalized_axes[7], obj.centroid[1],
-			obj.normalized_axes[2], obj.normalized_axes[5], obj.normalized_axes[8], obj.centroid[2],
-			0.0, 0.0, 0.0, 1.0;
+		 obj.normalized_axes[1], obj.normalized_axes[4], obj.normalized_axes[7], obj.centroid[1],
+		 obj.normalized_axes[2], obj.normalized_axes[5], obj.normalized_axes[8], obj.centroid[2],
+		 0.0, 0.0, 0.0, 1.0;
 	auto transform = t.inverse();
 
 	auto transform_array = cpptoml::make_array();
@@ -235,7 +242,7 @@ std::vector<std::string> MatterportTransformer::get_all_categories(const fs::pat
 	return res;
 }
 
-void MatterportTransformer::write_object_to_ply(Obj& obj, const fs::path& config_obj_dir)
+void MatterportTransformer::write_object_to_ply(MatterportObject& obj, const fs::path& config_obj_dir)
 {
 	std::vector<double> vert_x_out;
 	std::vector<double> vert_y_out;

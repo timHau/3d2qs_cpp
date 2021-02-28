@@ -381,11 +381,6 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 	/*
 	if (!is_smaller)
 		return std::nullopt;
-
-	double distance = get_distance_to(obj_b);
-	// we only check objects that are twice the volume away
-	if (distance > _volume * 2)
-		return std::nullopt;
 	*/
 
 	switch (side_of(obj_b))

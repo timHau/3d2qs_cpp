@@ -11,10 +11,9 @@
 
 namespace fs = std::filesystem;
 
-
 int main()
 {
-	// SUNCTransformer::transform("../data/datasets/sunc/");
+	SUNCTransformer::transform("../data/datasets/sunc/", true);
 	// MatterportTransformer::transform("../data/datasets/matterport3d/");
 
 	/*

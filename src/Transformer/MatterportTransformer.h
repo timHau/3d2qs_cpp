@@ -24,7 +24,7 @@ struct Segment
 	std::vector<Face> faces;
 };
 
-struct Obj
+struct MatterportObject
 {
 	int id;
 	std::string label;
@@ -40,21 +40,28 @@ struct Obj
 class MatterportTransformer
 {
 private:
-	static void handle_house(std::shared_ptr<cpptoml::table>& root, const fs::path& matterport_path, const std::string& house_name);
+	static void
+	handle_house(std::shared_ptr<cpptoml::table>& root,
+			const fs::path& matterport_path,
+			const std::string& house_name,
+			bool debug);
 
-	static std::shared_ptr<cpptoml::table> object_to_toml(Obj& obj, std::vector<std::string>& all_categories);
+	static std::shared_ptr<cpptoml::table>
+	object_to_toml(MatterportObject& obj, std::vector<std::string>& all_categories);
 
 	static std::map<int, Segment> get_all_segments(const fs::path& house_path, const std::string& house_name);
 
-	static std::vector<std::vector<double>> get_bbox(Obj& obj);
+	static std::vector<std::vector<double>> get_bbox(MatterportObject& obj);
 
 	static std::vector<std::string> get_all_categories(const fs::path& matterport_path);
 
-	static void write_object_to_ply(Obj& obj, const fs::path& config_obj_dir);
+	static void write_object_to_ply(MatterportObject& obj, const fs::path& config_obj_dir);
 
 
 public:
 	static void transform(const std::string& path);
+
+	static void transform(const std::string& path, bool debug);
 
 };
 
