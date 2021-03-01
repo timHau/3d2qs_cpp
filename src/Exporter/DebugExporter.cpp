@@ -4,9 +4,11 @@
 
 #include "DebugExporter.h"
 
+/*
+ * read .toml file and write them into an .ply file. Useful for debugging
+ */
 void DebugExporter::to_ply(const fs::path& input_dir)
 {
-	// read .toml file and write them into an .ply file. Useful for debugging
 
 	if (!fs::exists(input_dir))
 		throw std::invalid_argument("input dir does not exists");
@@ -19,7 +21,7 @@ void DebugExporter::to_ply(const fs::path& input_dir)
 		{
 			fs::path room_id = toml_file;
 			room_id.replace_extension("");
-			handle_toml(toml_path, room_id);
+			handle_toml(toml_path, room_id, input_dir);
 		}
 		catch (cpptoml::parse_exception& e)
 		{
@@ -28,16 +30,9 @@ void DebugExporter::to_ply(const fs::path& input_dir)
 	}
 }
 
-void DebugExporter::handle_toml(const fs::path& toml_path, const std::string& room_id)
+void DebugExporter::handle_toml(const fs::path& toml_path, const std::string& room_id, const fs::path& input_dir)
 {
 	auto config = cpptoml::parse_file(toml_path);
-
-	std::string dataset_name = config->get_qualified_as<std::string>("dataset.name")
-			.value_or("");
-	// lowercase the name, just in case
-	std::transform(dataset_name.begin(), dataset_name.end(), dataset_name.begin(),
-			[](unsigned char c)
-			{ return std::tolower(c); });
 
 	// every objects bounding box is written to its own .ply file
 	for (const auto& obj : *config->get_table_array("object"))
@@ -69,13 +64,14 @@ void DebugExporter::handle_toml(const fs::path& toml_path, const std::string& ro
 			}
 		}
 
-		const fs::path debug_path("../data/3d_objects_debug/");
-		const fs::path dir_path = debug_path / dataset_name;
+		const fs::path debug_path = input_dir / ".." / "debug";
+		if (!fs::exists(debug_path))
+			fs::create_directory(debug_path);
+
+		const fs::path dir_path = debug_path / room_id;
 		if (!fs::exists(dir_path))
-		{
 			fs::create_directory(dir_path);
-			std::cout << "created directory: " << dir_path << std::endl;
-		}
+
 		const std::string filename = "/" + id + "_" + label + "_bbox" + ".ply";
 		const std::string output_path = dir_path.string() + filename;
 

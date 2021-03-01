@@ -54,7 +54,11 @@ void MatterportTransformer::handle_house(
 	semseg_house_stream >> semseg_house_json;
 	auto seg_groups = semseg_house_json["segGroups"];
 
-	const fs::path config_obj_dir = matterport_path / "objects";
+	const fs::path debug_dir = matterport_path / "debug";
+	if (!fs::exists(debug_dir))
+		fs::create_directory(debug_dir);
+
+	const fs::path config_obj_dir = debug_dir / house_name;
 	if (!fs::exists(config_obj_dir))
 		fs::create_directory(config_obj_dir);
 

@@ -13,8 +13,8 @@ namespace fs = std::filesystem;
 
 int main()
 {
-	SUNCTransformer::transform("../data/datasets/sunc/", true);
-	// MatterportTransformer::transform("../data/datasets/matterport3d/");
+	// SUNCTransformer::transform("../data/datasets/sunc/", true);
+	// MatterportTransformer::transform("../data/datasets/matterport3d/", true);
 
 	/*
 	for (auto& dir : fs::directory_iterator("../data/datasets")) {
@@ -42,10 +42,8 @@ int main()
 	XmlExporter::to_xml(xml_output_path_matterport, objects_matterport);
 	 */
 
-	/*
 	DebugExporter::to_ply("../data/datasets/sunc/config/");
 	DebugExporter::to_ply("../data/datasets/matterport3d/config/");
-	 */
 
 	auto config = cpptoml::parse_file("../data/datasets/matterport3d/config/1pXnuDYAj8r.toml");
 	auto val = config->get_qualified_as<std::string>("dataset.name");

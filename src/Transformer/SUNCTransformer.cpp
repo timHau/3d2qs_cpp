@@ -15,9 +15,9 @@ void SUNCTransformer::transform(const std::string& path, bool debug)
 	const fs::path house_path = sunc_path / "house";
 	const fs::path object_path = sunc_path / "object";
 	const fs::path config_path = sunc_path / "config";
-	const fs::path objects_path = sunc_path / "objects";
-	if (!fs::exists(objects_path))
-		fs::create_directory(objects_path);
+	const fs::path debug_path = sunc_path / "debug";
+	if (!fs::exists(debug_path))
+		fs::create_directory(debug_path);
 
 	for (const auto& room : fs::directory_iterator(house_path))
 	{
@@ -29,7 +29,7 @@ void SUNCTransformer::transform(const std::string& path, bool debug)
 			std::ifstream house_stream(house_json_path);
 			house_stream >> json_data;
 
-			const fs::path objects_room_path = objects_path / room_id;
+			const fs::path objects_room_path = debug_path / room_id;
 			if (!fs::exists(objects_room_path))
 				fs::create_directory(objects_room_path);
 
@@ -125,7 +125,7 @@ void SUNCTransformer::handle_room(
 	root->insert("object", object_table_array);
 
 	auto meta_table = cpptoml::make_table();
-	meta_table->insert("name", "SUNC");
+	meta_table->insert("name", "SUNC_" + room_id);
 	root->insert("dataset", meta_table);
 
 	std::ofstream output;
