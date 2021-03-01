@@ -24,23 +24,20 @@ cmake --build .
 ## data folder
 ```
 data/
-├── 3d_objects_debug/
-│  ├── matterport3d/
-│  └── sunc/
-│ 
-├── datasets/
+└── datasets/
    ├── matterport3d/
    │  ├── cameras/
    │  ├── config/
+   │  ├── debug/
    │  ├── xml/
    │  ├── house_segmentations/
    │  ├── objects/
-   │  ├── metadata/
-   │  └── region_segmentations/
+   │  └── metadata/
    │
    └── sunc
       ├── config/
       ├── xml/
+      ├── debug/
       ├── house/
       └── object/
 ```
