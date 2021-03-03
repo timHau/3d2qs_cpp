@@ -293,23 +293,37 @@ std::string Object::relation_to(Object& obj_b)
 	// check for partial intersection
 	bool has_line_intersections = line_interesection_count_ab > 0 || line_interesection_count_ba > 0;
 	if (has_line_intersections)
+	{
 		if (is_tangent_to(obj_b))
+		{
 			return "EC";
+		}
 		else
+		{
 			return "PO";
+		}
+	}
 
 	// check obj_b contained in this bounding box
 	if (inside_count == 8)
+	{
 		if (is_tangent_to(obj_b))
+		{
 			return "TPPc";
+		}
 		return "NTTPc";
+	}
 
 	// check if this is contained in obj_b
 	int inside_count_c = obj_b.count_inside_bb(*get_bbox_vertices());
 	if (inside_count_c == 8)
+	{
 		if (is_tangent_to(obj_b))
+		{
 			return "TPP";
+		}
 		return "NTPP";
+	}
 
 	return "DC";
 }

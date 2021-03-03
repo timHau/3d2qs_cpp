@@ -31,6 +31,8 @@ int main()
 	std::cout << ".............Welcome............." << std::endl;
 
 	for (auto& dir : fs::directory_iterator("../data/datasets")) {
+		if (!fs::is_directory(dir))
+			continue;
 		const fs::path& dataset_path = dir.path();
 		const fs::path& config_path = dataset_path / "config";
 

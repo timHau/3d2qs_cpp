@@ -31,7 +31,11 @@ private:
 			const fs::path& output_path,
 			bool debug);
 
-	static SuncObject handle_object(fs::path& obj_path, const std::string& room_id, Eigen::Matrix4d& transform, Eigen::Matrix3d& rot);
+	static SuncObject handle_object(
+			fs::path& obj_path,
+			const std::string& room_id,
+			Eigen::Matrix4d& transform,
+			Eigen::Matrix3d& rot);
 
 	static void write_object_to_ply(SuncObject& object, const fs::path& objects_path);
 
