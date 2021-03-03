@@ -197,16 +197,17 @@ void SUNCTransformer::write_object_to_ply(SuncObject& object, const fs::path& ob
 	std::vector<double> vert_z_out;
 	std::vector<std::vector<int>> vert_indices_out;
 
-	int index_count = 0;
-	for (auto vec : object.vertices)
+	for (int i = 0; i < object.vertices.size(); i += 3)
 	{
-		vert_x_out.push_back(vec[0]);
-		vert_y_out.push_back(vec[1]);
-		vert_z_out.push_back(vec[2]);
+		for (int j = 0; j < 3; ++j)
+		{
+			vert_x_out.push_back(object.vertices[i + j][0]);
+			vert_y_out.push_back(object.vertices[i + j][1]);
+			vert_z_out.push_back(object.vertices[i + j][2]);
+		}
 
-		std::vector<int> vert_index{ index_count, index_count + 1, index_count + 2 };
+		std::vector<int> vert_index{ i, i + 1, i + 2 };
 		vert_indices_out.push_back(vert_index);
-		index_count += 3;
 	}
 
 	const fs::path obj_path = objects_path / ( object.id + ".ply");

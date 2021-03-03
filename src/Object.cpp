@@ -340,18 +340,6 @@ std::string Object::relation_to(Object& obj_b)
 int Object::side_of(Object& obj_b) const
 {
 	auto diff_centroids = *obj_b.get_centroid() - _centroid;
-	// compute the angles the vector makes to the three positive axis
-	double yz2_sqrt = std::sqrt(std::pow(diff_centroids.y(), 2) + std::pow(diff_centroids.z(), 2));
-	auto angle_x = std::atan2(yz2_sqrt, diff_centroids.x());
-	double zx2_sqrt = std::sqrt(std::pow(diff_centroids.z(), 2) + std::pow(diff_centroids.x(), 2));
-	auto angle_y = std::atan2(zx2_sqrt, diff_centroids.y());
-	double xy2_sqrt = std::sqrt(std::pow(diff_centroids.x(), 2) + std::pow(diff_centroids.y(), 2));
-	auto angle_z = std::atan2(xy2_sqrt, diff_centroids.z());
-	// convert to degrees
-	angle_x *= 180 / M_PI;
-	angle_y *= 180 / M_PI;
-	angle_z *= 180 / M_PI;
-
 	// transform basis with transformation matrix
 	// project difference of centroids on each axis and get absolute value
 	Eigen::Vector4d e1(1, 0, 0, 0);
@@ -365,8 +353,6 @@ int Object::side_of(Object& obj_b) const
 	auto y_len = diff_centroids.dot(b2);
 	auto z_len = diff_centroids.dot(b3);
 
-	std::cout << "transform:" << std::endl;
-	std::cout << _transform << std::endl;
 	std::cout << "x-axis:" << std::endl;
 	std::cout << b1 << std::endl;
 	std::cout << "------" << std::endl;
@@ -375,9 +361,6 @@ int Object::side_of(Object& obj_b) const
 	std::cout << "------" << std::endl;
 	std::cout << "z-axis:" << std::endl;
 	std::cout << b3 << std::endl;
-	std::cout << "------" << std::endl;
-	std::cout << "diff centroid:" << std::endl;
-	std::cout << diff_centroids << std::endl;
 	std::cout << "------" << std::endl;
 	std::cout << "x_len: " << x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
 
