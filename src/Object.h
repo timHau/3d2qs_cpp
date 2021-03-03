@@ -7,7 +7,7 @@
 #include <optional>
 #include <tinyxml2.h>
 
-#define _USE_MATH_DEFINES // for C++
+#define _USE_MATH_DEFINES
 
 #include <cmath>
 

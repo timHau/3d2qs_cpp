@@ -355,7 +355,7 @@ std::string Object::side_of(Object& obj_b)
 	std::cout << b2 << std::endl;
 	std::cout << "b3:" << std::endl;
 	std::cout << b3 << std::endl;
-	std::cout << "x_len: "	<< x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
+	std::cout << "x_len: " << x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
 
 
 	// biggest absolute value determines direction, sign determines orientation
@@ -396,10 +396,8 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 {
 	bool is_smaller = _volume < obj_b.get_volume();
 
-	/*
 	if (!is_smaller)
 		return std::nullopt;
-	*/
 
 	// define metric
 
@@ -418,6 +416,11 @@ tinyxml2::XMLElement* Object::as_xml(tinyxml2::XMLDocument& doc)
 	std::stringstream location;
 	location << _centroid[0] << ", " << _centroid[1] << ", " << _centroid[2];
 	spatial->SetAttribute("location", location.str().c_str());
+
+	Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]");
+	std::stringstream transform;
+	transform << _transform.format(CommaInitFmt);
+	spatial->SetAttribute("transform", transform.str().c_str());
 
 	return spatial;
 }
