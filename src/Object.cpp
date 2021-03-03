@@ -348,16 +348,6 @@ std::string Object::side_of(Object& obj_b)
 	auto y_len = b2.dot(diff_centroids);
 	auto z_len = b3.dot(diff_centroids);
 
-
-	std::cout << "b1:" << std::endl;
-	std::cout << b1 << std::endl;
-	std::cout << "b2:" << std::endl;
-	std::cout << b2 << std::endl;
-	std::cout << "b3:" << std::endl;
-	std::cout << b3 << std::endl;
-	std::cout << "x_len: " << x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
-
-
 	// biggest absolute value determines direction, sign determines orientation
 	if (std::abs(y_len) > std::abs(x_len) && std::abs(y_len) > std::abs(z_len))
 	{
@@ -399,7 +389,18 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 	if (!is_smaller)
 		return std::nullopt;
 
-	// define metric
+	// only check objects whos centroid is 5 * max_edge away where max_edge is the longest edge in the bbox
+	auto bbox_edges = *get_bbox_edges();
+	double max_l = 0.0;
+	for (auto& edge : bbox_edges)
+	{
+		double d = (edge.second - edge.first).norm();
+		if (d > max_l) max_l = d;
+	}
+	double dist_to_b = get_distance_to(obj_b);
+	std::cout << 5*max_l << " " << dist_to_b << std::endl;
+	if (dist_to_b > 5 * max_l)
+		return std::nullopt;
 
 	return side_of(obj_b);
 }
