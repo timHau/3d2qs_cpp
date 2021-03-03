@@ -68,7 +68,7 @@ public:
 
 	std::string relation_to(Object& obj_b);
 
-	int side_of(Object& obj_b) const;
+	std::string side_of(Object& obj_b);
 
 	std::optional<std::string> intrinsic_orientation_to(Object& obj_b);
 

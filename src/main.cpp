@@ -65,12 +65,12 @@ int main()
 
 	// for debugging only
 	// ---------------------------------------------------------------------
-	auto obj_a = datasets[1].objects[44];
-	auto obj_b = datasets[1].objects[3];
-	auto rel_ab = obj_a.intrinsic_orientation_to(obj_b);
-	if (rel_ab)
+	auto obj_a = datasets[0].objects[29];
+	auto obj_b = datasets[0].objects[15];
+	auto rel_ba = obj_a.intrinsic_orientation_to(obj_b);
+	if (rel_ba)
 	{
-		std::cout << obj_a.get_id()->c_str() << " " << rel_ab.value() << " " << obj_b.get_id()->c_str()
+		std::cout << obj_b.get_id()->c_str() << " " << rel_ba.value() << " " << obj_a.get_id()->c_str()
 				  << std::endl;
 		std::cout << "-------" << std::endl;
 	}

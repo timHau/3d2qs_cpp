@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 #include <filesystem>
 #include "happly.h"
+#include <cstdlib>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -15,7 +16,7 @@
 namespace fs = std::filesystem;
 
 struct SuncObject {
-	std::string id;
+	std::string label;
 	std::string room_id;
 	std::vector<Eigen::Vector3d> vertices;
 };

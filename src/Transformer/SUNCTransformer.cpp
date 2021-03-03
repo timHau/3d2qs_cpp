@@ -116,7 +116,7 @@ void SUNCTransformer::handle_room(
 				object_table->insert("id", node["modelId"]);
 				object_table->insert("transform", transform);
 				// TODO replace modelId by true label
-				object_table->insert("label", node["modelId"]);
+				object_table->insert("label", object.label);
 				object_table_array->push_back(object_table);
 			}
 		}
@@ -185,8 +185,11 @@ SuncObject SUNCTransformer::handle_object(
 		}
 	}
 
-	std::string id = obj_path.stem();
-	SuncObject object{id, room_id, vertices};
+	std::string label = obj_path.stem();
+	// add random number to label to prevent issue with elements that share the same number.
+	// Not nice, should be improved
+	label += "_" + std::to_string(std::rand() % 1000);
+	SuncObject object{label, room_id, vertices};
 	return object;
 }
 
@@ -210,7 +213,7 @@ void SUNCTransformer::write_object_to_ply(SuncObject& object, const fs::path& ob
 		vert_indices_out.push_back(vert_index);
 	}
 
-	const fs::path obj_path = objects_path / ( object.id + ".ply");
+	const fs::path obj_path = objects_path / ( object.label + ".ply");
 
 	// write each object as a .ply
 	happly::PLYData objectPly;

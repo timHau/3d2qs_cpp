@@ -330,14 +330,8 @@ std::string Object::relation_to(Object& obj_b)
 
 /*
  * Calculate on which side of this object, obj_b is
- * 0 -> front
- * 1 -> up
- * 2 -> right
- * 3 -> down
- * 4 -> left
- * 5 -> behind
  */
-int Object::side_of(Object& obj_b) const
+std::string Object::side_of(Object& obj_b)
 {
 	auto diff_centroids = *obj_b.get_centroid() - _centroid;
 	// transform basis with transformation matrix
@@ -349,23 +343,50 @@ int Object::side_of(Object& obj_b) const
 	Eigen::Vector3d b1 = (_transform * e1).head<3>();
 	Eigen::Vector3d b2 = (_transform * e2).head<3>();
 	Eigen::Vector3d b3 = (_transform * e3).head<3>();
-	auto x_len = diff_centroids.dot(b1);
-	auto y_len = diff_centroids.dot(b2);
-	auto z_len = diff_centroids.dot(b3);
+	// project difference to new basis
+	auto x_len = b1.dot(diff_centroids);
+	auto y_len = b2.dot(diff_centroids);
+	auto z_len = b3.dot(diff_centroids);
 
-	std::cout << "x-axis:" << std::endl;
+
+	std::cout << "b1:" << std::endl;
 	std::cout << b1 << std::endl;
-	std::cout << "------" << std::endl;
-	std::cout << "y-axis:" << std::endl;
+	std::cout << "b2:" << std::endl;
 	std::cout << b2 << std::endl;
-	std::cout << "------" << std::endl;
-	std::cout << "z-axis:" << std::endl;
+	std::cout << "b3:" << std::endl;
 	std::cout << b3 << std::endl;
-	std::cout << "------" << std::endl;
-	std::cout << "x_len: " << x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
+	std::cout << "x_len: "	<< x_len << " y_len: " << y_len << " z_len: " << z_len << std::endl;
 
 
-	return -1;
+	// biggest absolute value determines direction, sign determines orientation
+	if (std::abs(y_len) > std::abs(x_len) && std::abs(y_len) > std::abs(z_len))
+	{
+		if (z_len > 0)
+		{
+			return "in_front_of";
+		}
+		return "behind";
+	}
+
+	if (std::abs(z_len) > std::abs(y_len) && std::abs(z_len) > std::abs(x_len))
+	{
+		auto is_tang = is_tangent_to(obj_b);
+		if (y_len > 0)
+		{
+			if (is_tang)
+			{
+				return "on";
+			}
+			return "above";
+		}
+		if (is_tang)
+		{
+			return "beneath";
+		}
+		return "below";
+	}
+
+	return "next_to";
 }
 
 /*
@@ -380,27 +401,9 @@ std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 		return std::nullopt;
 	*/
 
-	switch (side_of(obj_b))
-	{
-	case 0:
-		return "in_front_of";
-	case 1:
-		if (is_tangent_to(obj_b))
-			return "on";
-		return "above";
-	case 2:
-		return "next_to";
-	case 3:
-		if (is_tangent_to(obj_b))
-			return "beneath";
-		return "below";
-	case 4:
-		return "next_to";
-	case 5:
-		return "behind";
-	default:
-		return std::nullopt;
-	}
+	// define metric
+
+	return side_of(obj_b);
 }
 
 /*
