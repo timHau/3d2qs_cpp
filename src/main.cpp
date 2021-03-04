@@ -46,7 +46,7 @@ int main()
 		for (auto& config_file : fs::directory_iterator(config_path))
 		{
 			if(!(config_file.path().extension() == ".toml"))
-				continue; // ignore all files that are not .toml
+				continue; // ignore all files that are not .toml files
 
 			auto config = cpptoml::parse_file(config_file.path());
 			std::vector<Object> objects;
@@ -63,6 +63,9 @@ int main()
 		}
 	}
 
+	MatterportTransformer::transform("../data/datasets/matterport3d/", "1pXnuDYAj8r");
+
+	/*
 	// for debugging only
 	// ---------------------------------------------------------------------
 	auto obj_a = datasets[0].objects[29];
@@ -85,7 +88,7 @@ int main()
 		if (input == "r")
 		{
 			SUNCTransformer::transform("../data/datasets/sunc/", true);
-			MatterportTransformer::transform("../data/datasets/matterport3d/", true);
+			MatterportTransformer::transform("../data/datasets/matterport3d/", "1pXnuDYAj8r", true);
 		}
 
 		if (input == "x")
@@ -108,5 +111,6 @@ int main()
 			should_stop = true;
 	}
 
+	 */
 	return 0;
 }

@@ -1,21 +1,34 @@
 #include "MatterportTransformer.h"
 
-void MatterportTransformer::transform(const std::string& path)
+void MatterportTransformer::transform(const std::string& path, const std::string& house_name)
 {
-	transform(path, false);
+	transform(path, house_name, false);
 }
 
-void MatterportTransformer::transform(const std::string& path, bool debug)
+void MatterportTransformer::transform(const std::string& path, const std::string& house_name, bool debug)
 {
 	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
 
 	const fs::path matterport_path(path);
 	if (!fs::exists(matterport_path))
 		throw std::invalid_argument("matterport directory does not exist");
-	const std::string house_name = "1pXnuDYAj8r";
-	std::cout << "start parsing " << house_name << " (matterport)" << std::endl;
 
-	handle_house(root, matterport_path, house_name, debug);
+	const fs::path house_path = matterport_path / "house_segmentations";
+	if (!fs::exists(house_path))
+		throw std::invalid_argument("house segmentations directory does not exist");
+
+	const fs::path house_file = house_path / (house_name + ".house");
+	if (!fs::exists(house_file))
+		throw std::invalid_argument(".house file does not exists");
+
+	std::ifstream t(house_file.c_str());
+	std::stringstream house_buffer;
+	house_buffer << t.rdbuf();
+
+	std::string house_buffer_str = house_buffer.str();
+	auto obj_camera_mapper = get_obj_camera_mapper(house_buffer_str);
+
+	handle_house(root, obj_camera_mapper, matterport_path, house_path, house_name, debug);
 
 	auto meta_table = cpptoml::make_table();
 	meta_table->insert("name", house_name);
@@ -31,16 +44,64 @@ void MatterportTransformer::transform(const std::string& path, bool debug)
 	std::cout << "wrote: " << output_path << std::endl;
 }
 
+std::map<std::string, std::vector<std::string>> MatterportTransformer::get_obj_camera_mapper(std::string& house_buffer)
+{
+	std::map<std::string, std::string> pan_reg_map = {};
+
+	std::stringstream ss(house_buffer);
+	std::string line_str;
+	std::vector<std::vector<std::string>> lines;
+	while (std::getline(ss, line_str, '\n'))
+	{
+		std::stringstream sl(line_str);
+		std::string token;
+		std::vector<std::string> line;
+		while (std::getline(sl, token, ' '))
+			line.push_back(token);
+		lines.push_back(line);
+	}
+
+	std::map<std::string, std::vector<std::string>> cameras_per_region = {};
+	std::map<std::string, std::vector<std::string>> obj_to_cam = {};
+	for (auto& l : lines)
+	{
+		if (l[0] == "P")
+		{
+			std::string panorama_index = l[4];
+			std::string region_index = l[5];
+			pan_reg_map[panorama_index] = region_index;
+		}
+
+		// here we assume that 'P' comes for 'I' in the .house file
+		if (l[0] == "I")
+		{
+			std::string panorama_index = l[3];
+			std::string region_index = pan_reg_map[panorama_index];
+			Eigen::Matrix4d camera_transform;
+			std::vector<std::string> ext_cam = std::vector<std::string>(l.begin() + 11, l.begin() + 27);
+			cameras_per_region[region_index] = ext_cam;
+		}
+
+		// here we assume that 'I' comes for 'O'
+		if (l[0] == "O")
+		{
+			std::string object_index = l[2];
+			std::string region_index = l[3];
+			obj_to_cam[object_index] = cameras_per_region[region_index];
+		}
+	}
+
+	return obj_to_cam;
+}
+
 void MatterportTransformer::handle_house(
 		std::shared_ptr<cpptoml::table>& root,
+		std::map<std::string, std::vector<std::string>>& obj_camera_mapper,
 		const fs::path& matterport_path,
+		const fs::path& house_path,
 		const std::string& house_name,
 		bool debug)
 {
-	const fs::path house_path = matterport_path / "house_segmentations";
-	if (!fs::exists(house_path))
-		throw std::invalid_argument("house segmentations directory does not exist");
-
 	// get all segments in the house
 	std::cout << "start building segments " << std::endl;
 	std::map<int, Segment> all_segs = get_all_segments(house_path, house_name);
@@ -70,7 +131,7 @@ void MatterportTransformer::handle_house(
 	for (const auto& seg_group : seg_groups)
 	{
 		// each seg_group represents one object
-		int id = seg_group["id"];
+		std::string id = std::to_string((int)seg_group["id"]);
 		int label_index = seg_group["label_index"];
 		if (label_index == 40 || label_index < 0) // skip over unknown objects
 			continue;
@@ -81,10 +142,20 @@ void MatterportTransformer::handle_house(
 		std::vector<double> normalized_axes = seg_group["obb"]["normalizedAxes"];
 		std::vector<int> segment_indices = seg_group["segments"];
 		std::vector<Segment> segments;
+		segments.reserve(segment_indices.size());
 		for (int seg_index : segment_indices)
 			segments.push_back(all_segs[seg_index]);
+		std::vector<std::string> cam_transform = obj_camera_mapper[id];
 
-		MatterportObject obj{ id, label, centroid, axes_lengths, dominant_normal, normalized_axes, segments };
+		MatterportObject obj{
+			id,
+			label,
+			centroid,
+			axes_lengths,
+			dominant_normal,
+			normalized_axes,
+			segments,
+			cam_transform};
 		obj.bbox = get_bbox(obj);
 
 		auto as_toml = object_to_toml(obj, all_categories);
@@ -194,9 +265,9 @@ MatterportTransformer::object_to_toml(MatterportObject& obj, std::vector<std::st
 	// ref: https://stackoverflow.com/questions/53227533/how-to-find-out-the-rotation-matrix-for-the-oriented-bounding-box
 	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> t;
 	t << obj.normalized_axes[0], obj.normalized_axes[3], obj.normalized_axes[6], obj.centroid[0],
-		 obj.normalized_axes[1], obj.normalized_axes[4], obj.normalized_axes[7], obj.centroid[1],
-		 obj.normalized_axes[2], obj.normalized_axes[5], obj.normalized_axes[8], obj.centroid[2],
-		 0.0, 0.0, 0.0, 1.0;
+			obj.normalized_axes[1], obj.normalized_axes[4], obj.normalized_axes[7], obj.centroid[1],
+			obj.normalized_axes[2], obj.normalized_axes[5], obj.normalized_axes[8], obj.centroid[2],
+			0.0, 0.0, 0.0, 1.0;
 	auto transform = t.inverse();
 
 	auto transform_array = cpptoml::make_array();
@@ -212,10 +283,15 @@ MatterportTransformer::object_to_toml(MatterportObject& obj, std::vector<std::st
 		bbox_array->push_back(row_array);
 	}
 
+	auto cam_transform_array = cpptoml::make_array();
+	for (auto& s : obj.cam_transform)
+		cam_transform_array->push_back(std::stod(s));
+
 	object_table->insert("bbox", bbox_array);
-	object_table->insert("id", std::to_string(obj.id));
+	object_table->insert("id", obj.id);
 	object_table->insert("label", obj.label);
 	object_table->insert("transform", transform_array);
+	object_table->insert("cam_transform", cam_transform_array);
 	return object_table;
 }
 
@@ -271,7 +347,7 @@ void MatterportTransformer::write_object_to_ply(MatterportObject& obj, const fs:
 		}
 	}
 
-	const fs::path obj_path = config_obj_dir / (std::to_string(obj.id) + "_" + obj.label + ".ply");
+	const fs::path obj_path = config_obj_dir / (obj.id + "_" + obj.label + ".ply");
 
 	// write each object as a .ply
 	happly::PLYData objectPly;
@@ -284,3 +360,5 @@ void MatterportTransformer::write_object_to_ply(MatterportObject& obj, const fs:
 	objectPly.write(obj_path);
 	std::cout << "wrote: " << obj_path << std::endl;
 }
+
+

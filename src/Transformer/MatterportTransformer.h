@@ -4,6 +4,7 @@
 #include "happly.h"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include "json.hpp"
 #include "cpptoml.h"
@@ -26,23 +27,25 @@ struct Segment
 
 struct MatterportObject
 {
-	int id;
+	std::string id;
 	std::string label;
 	std::vector<double> centroid;
 	std::vector<double> axes_length;
 	std::vector<double> dominant_normal;
 	std::vector<double> normalized_axes;
 	std::vector<Segment> segments;
+	std::vector<std::string> cam_transform;
 	std::vector<std::vector<double>> bbox;
 };
-
 
 class MatterportTransformer
 {
 private:
 	static void
 	handle_house(std::shared_ptr<cpptoml::table>& root,
+			std::map<std::string, std::vector<std::string>>& obj_camera_mapper,
 			const fs::path& matterport_path,
+			const fs::path& house_path,
 			const std::string& house_name,
 			bool debug);
 
@@ -57,11 +60,12 @@ private:
 
 	static void write_object_to_ply(MatterportObject& obj, const fs::path& config_obj_dir);
 
+	static std::map<std::string, std::vector<std::string>> get_obj_camera_mapper(std::string& house_buffer);
 
 public:
-	static void transform(const std::string& path);
+	static void transform(const std::string& path, const std::string& house_name);
 
-	static void transform(const std::string& path, bool debug);
+	static void transform(const std::string& path, const std::string& house_name, bool debug);
 
 };
 
