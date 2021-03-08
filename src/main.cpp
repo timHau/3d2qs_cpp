@@ -66,7 +66,7 @@ int main()
 	}
 
 
-
+	/*
 	// for debugging only
 	// ---------------------------------------------------------------------
 	auto obj_a = datasets[1].objects[29];
@@ -85,8 +85,8 @@ int main()
 	std::cout << "obj a:" << *(obj_a.get_id()) << "_" << *(obj_a.get_label()) << " obj_b " << *(obj_b.get_id()) << "_"
 			  << *(obj_b.get_label()) << std::endl;
 	// ---------------------------------------------------------------------
+	*/
 
-	/*
 	bool should_stop = false;
 	while (!should_stop)
 	{
@@ -118,6 +118,5 @@ int main()
 			should_stop = true;
 	}
 
-	 */
 	return 0;
 }
