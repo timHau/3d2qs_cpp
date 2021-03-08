@@ -28,6 +28,7 @@ private:
 	double _volume;
 	BoundingBox _bbox;
 	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> _transform; // column major
+	Eigen::Matrix4d _cam_transform;
 
 	bool bbox_vertices_equal_to(Object obj_b) const;
 
@@ -48,6 +49,13 @@ private:
 
 	double get_volume() const;
 
+	bool is_close_enough(Object& obj_b);
+
+	std::tuple<double, double, double> get_projected_diff(Object& obj_b, Eigen::Matrix4d& transform);
+
+	std::string relative_side_of(Object& obj_b);
+
+	std::string intrinsic_side_of(Object& obj_b);
 
 public:
 	explicit Object(const std::shared_ptr<cpptoml::table>& obj);
@@ -68,9 +76,9 @@ public:
 
 	std::string relation_to(Object& obj_b);
 
-	std::string side_of(Object& obj_b);
-
 	std::optional<std::string> intrinsic_orientation_to(Object& obj_b);
+
+	std::optional<std::string> relative_orientation_to(Object& obj_b);
 
 	tinyxml2::XMLElement* as_xml(tinyxml2::XMLDocument& doc);
 

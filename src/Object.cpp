@@ -60,7 +60,7 @@ Object::Object(const std::shared_ptr<cpptoml::table>& obj)
 
 	_bbox = BoundingBox{ vertices, edges, faces, normals };
 
-	// set centroid of bounding box
+	// set centroid and volume of bounding box
 	Eigen::Vector3d V = vertices[0];
 	Eigen::Vector3d A = vertices[1];
 	Eigen::Vector3d B = vertices[3];
@@ -75,8 +75,19 @@ Object::Object(const std::shared_ptr<cpptoml::table>& obj)
 
 	// set the transformation matrix
 	std::vector<double> transform_vec = *(obj->get_array_of<double>("transform"));
-	Eigen::Matrix<double, 4, 4, Eigen::ColMajor> transform_mat(transform_vec.data());
-	_transform = transform_mat;
+	if (!transform_vec.empty())
+	{
+		Eigen::Matrix<double, 4, 4, Eigen::ColMajor> transform_mat(transform_vec.data());
+		_transform = transform_mat;
+	}
+
+	// set the camera transformation
+	std::vector<double> cam_transform_vec = *(obj->get_array_of<double>("cam_transform"));
+	if (!cam_transform_vec.empty())
+	{
+		Eigen::Matrix4d cam_transform_mat(cam_transform_vec.data());
+		_cam_transform = cam_transform_mat;
+	}
 }
 
 std::vector<Eigen::Vector3d>* Object::get_bbox_vertices()
@@ -99,9 +110,11 @@ std::vector<Eigen::Vector3d>* Object::get_bbox_normals()
 	return &_bbox.normals;
 }
 
+/*
+ * returns smallest and largest x,y,z point of the bounding box
+ */
 std::pair<Eigen::Vector3d, Eigen::Vector3d> Object::get_min_max_bbox()
 {
-	// returns smallest and largest x,y,z point of the bounding box
 	Eigen::Vector3d smallest = _bbox.vertices[0];
 	Eigen::Vector3d biggest = _bbox.vertices[6];
 	for (const auto& v : _bbox.vertices)
@@ -140,6 +153,23 @@ double Object::get_distance_to(Object& obj_b)
 {
 	Eigen::Vector3d d = *obj_b.get_centroid() - _centroid;
 	return std::abs(d.norm());
+}
+
+/*
+ * check if obj_b is close enough. Where close means its centroid is within the radius
+ * of 5 * max_edge_of_bbox
+ */
+bool Object::is_close_enough(Object& obj_b)
+{
+	auto bbox_edges = *get_bbox_edges();
+	double max_l = 0.0;
+	for (auto& edge : bbox_edges)
+	{
+		double d = (edge.second - edge.first).norm();
+		if (d > max_l) max_l = d;
+	}
+	double dist_to_b = get_distance_to(obj_b);
+	return dist_to_b > 5 * max_l;
 }
 
 bool Object::bbox_vertices_equal_to(Object obj_b) const
@@ -329,9 +359,10 @@ std::string Object::relation_to(Object& obj_b)
 }
 
 /*
- * Calculate on which side of this object, obj_b is
+ * transform standard basis with transform and project diff of centroids onto transformed basis
+ * returns lenght of projection
  */
-std::string Object::side_of(Object& obj_b)
+std::tuple<double, double, double> Object::get_projected_diff(Object& obj_b, Eigen::Matrix4d& transform)
 {
 	auto diff_centroids = *obj_b.get_centroid() - _centroid;
 	// transform basis with transformation matrix
@@ -340,13 +371,26 @@ std::string Object::side_of(Object& obj_b)
 	Eigen::Vector4d e2(0, 1, 0, 0);
 	Eigen::Vector4d e3(0, 0, 1, 0);
 	// transformed basis vectors
-	Eigen::Vector3d b1 = (_transform * e1).head<3>();
-	Eigen::Vector3d b2 = (_transform * e2).head<3>();
-	Eigen::Vector3d b3 = (_transform * e3).head<3>();
+	Eigen::Vector3d b1 = (transform * e1).head<3>();
+	Eigen::Vector3d b2 = (transform * e2).head<3>();
+	Eigen::Vector3d b3 = (transform * e3).head<3>();
 	// project difference to new basis
 	auto x_len = b1.dot(diff_centroids);
 	auto y_len = b2.dot(diff_centroids);
 	auto z_len = b3.dot(diff_centroids);
+
+	return std::make_tuple(x_len, y_len, z_len);
+}
+
+/*
+ * Calculate on which side of this object, obj_b is
+ */
+std::string Object::intrinsic_side_of(Object& obj_b)
+{
+	auto projected_lengths = get_projected_diff(obj_b, _transform);
+	double x_len = std::get<0>(projected_lengths);
+	double y_len = std::get<1>(projected_lengths);
+	double z_len = std::get<2>(projected_lengths);
 
 	// biggest absolute value determines direction, sign determines orientation
 	if (std::abs(y_len) > std::abs(x_len) && std::abs(y_len) > std::abs(z_len))
@@ -384,25 +428,16 @@ std::string Object::side_of(Object& obj_b)
  */
 std::optional<std::string> Object::intrinsic_orientation_to(Object& obj_b)
 {
-	bool is_smaller = _volume < obj_b.get_volume();
 
+	bool is_smaller = _volume < obj_b.get_volume();
 	if (!is_smaller)
 		return std::nullopt;
 
-	// only check objects whos centroid is 5 * max_edge away where max_edge is the longest edge in the bbox
-	auto bbox_edges = *get_bbox_edges();
-	double max_l = 0.0;
-	for (auto& edge : bbox_edges)
-	{
-		double d = (edge.second - edge.first).norm();
-		if (d > max_l) max_l = d;
-	}
-	double dist_to_b = get_distance_to(obj_b);
-	std::cout << 5*max_l << " " << dist_to_b << std::endl;
-	if (dist_to_b > 5 * max_l)
+	bool is_close = is_close_enough(obj_b);
+	if (!is_close)
 		return std::nullopt;
 
-	return side_of(obj_b);
+	return intrinsic_side_of(obj_b);
 }
 
 /*
@@ -424,4 +459,42 @@ tinyxml2::XMLElement* Object::as_xml(tinyxml2::XMLDocument& doc)
 	spatial->SetAttribute("transform", transform.str().c_str());
 
 	return spatial;
+}
+
+std::string Object::relative_side_of(Object& obj_b)
+{
+	auto projected_lengths = get_projected_diff(obj_b, _cam_transform);
+	double x_len = std::get<0>(projected_lengths);
+	double y_len = std::get<1>(projected_lengths);
+	double z_len = std::get<2>(projected_lengths);
+
+	// biggest absolute value determines direction, sign determines orientation
+	if (std::abs(z_len) > std::abs(x_len) && std::abs(z_len) > std::abs(y_len))
+	{
+		if (z_len > 0)
+		{
+			return "in_front_of";
+		}
+		return "behind";
+	}
+
+	if (x_len < 0)
+	{
+		return "left";
+	}
+
+	return "right";
+}
+
+std::optional<std::string> Object::relative_orientation_to(Object& obj_b)
+{
+	bool is_smaller = _volume < obj_b.get_volume();
+	if (!is_smaller)
+		return std::nullopt;
+
+	bool is_close = is_close_enough(obj_b);
+	if (!is_close)
+		return std::nullopt;
+
+	return relative_side_of(obj_b);
 }

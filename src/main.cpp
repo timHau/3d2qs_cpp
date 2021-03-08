@@ -11,7 +11,8 @@
 
 namespace fs = std::filesystem;
 
-struct Dataset {
+struct Dataset
+{
 	const fs::path xml_path;
 	const fs::path config_path;
 	std::vector<Object> objects;
@@ -37,7 +38,8 @@ int main()
 	std::cout << ".............Welcome............." << std::endl;
 
 	std::vector<Dataset> datasets;
-	for (auto& dir : fs::directory_iterator("../data/datasets")) {
+	for (auto& dir : fs::directory_iterator("../data/datasets"))
+	{
 		if (!fs::is_directory(dir))
 			continue;
 		const fs::path& dataset_path = dir.path();
@@ -45,7 +47,7 @@ int main()
 
 		for (auto& config_file : fs::directory_iterator(config_path))
 		{
-			if(!(config_file.path().extension() == ".toml"))
+			if (!(config_file.path().extension() == ".toml"))
 				continue; // ignore all files that are not .toml files
 
 			auto config = cpptoml::parse_file(config_file.path());
@@ -58,28 +60,33 @@ int main()
 
 			std::string xml_filename = config_file.path().stem().string() + ".xml";
 			const fs::path& xml_path = dataset_path / "xml" / xml_filename;
-			Dataset d{xml_path, config_path, objects};
+			Dataset d{ xml_path, config_path, objects };
 			datasets.push_back(d);
 		}
 	}
 
-	MatterportTransformer::transform("../data/datasets/matterport3d/", "1pXnuDYAj8r");
 
-	/*
+
 	// for debugging only
 	// ---------------------------------------------------------------------
-	auto obj_a = datasets[0].objects[29];
-	auto obj_b = datasets[0].objects[15];
-	auto rel_ba = obj_a.intrinsic_orientation_to(obj_b);
+	auto obj_a = datasets[1].objects[29];
+	auto obj_b = datasets[1].objects[15];
+	auto rel_ba = obj_a.relative_orientation_to(obj_b);
 	if (rel_ba)
 	{
 		std::cout << obj_b.get_id()->c_str() << " " << rel_ba.value() << " " << obj_a.get_id()->c_str()
 				  << std::endl;
 		std::cout << "-------" << std::endl;
 	}
-	std::cout << "obj a:" << *(obj_a.get_id()) << "_" << *(obj_a.get_label()) << " obj_b " << *(obj_b.get_id()) << "_" << *(obj_b.get_label()) << std::endl;
+	else
+	{
+		std::cout << "either not the smaller one or not close enough" << std::endl;
+	}
+	std::cout << "obj a:" << *(obj_a.get_id()) << "_" << *(obj_a.get_label()) << " obj_b " << *(obj_b.get_id()) << "_"
+			  << *(obj_b.get_label()) << std::endl;
 	// ---------------------------------------------------------------------
 
+	/*
 	bool should_stop = false;
 	while (!should_stop)
 	{
