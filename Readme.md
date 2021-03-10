@@ -36,6 +36,9 @@ data/
    │
    └── sunc
       ├── config/
+      ├── debug/
+      ├── room/
+      ├── stats/
       ├── xml/
       ├── debug/
       ├── house/
