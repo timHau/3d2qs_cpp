@@ -157,7 +157,7 @@ double Object::get_distance_to(Object& obj_b)
 
 /*
  * check if obj_b is close enough. Where close means its centroid is within the radius
- * of 5 * max_edge_of_bbox
+ * of 3 * max_edge_of_bbox
  */
 bool Object::is_close_enough(Object& obj_b)
 {
@@ -169,7 +169,7 @@ bool Object::is_close_enough(Object& obj_b)
 		if (d > max_l) max_l = d;
 	}
 	double dist_to_b = get_distance_to(obj_b);
-	return dist_to_b > 5 * max_l;
+	return dist_to_b > 3 * max_l;
 }
 
 bool Object::bbox_vertices_equal_to(Object obj_b) const

@@ -5,12 +5,14 @@ void XmlExporter::to_xml(const fs::path& output_path, std::vector<Object>& objec
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLElement* root = doc.NewElement("ROOT");
 
+	std::cout << "start writing spatial entities" << std::endl;
 	// write spatial entities into .xml file
 	for (Object& obj : objects)
 	{
 		root->InsertEndChild(obj.as_xml(doc));
 	}
 
+	std::cout << "start QS/Olinks" << std::endl;
 	// write qslinks / olinks into .xml file
 	for (auto& obj_pair : utils::cartesian_product(objects, objects))
 	{
@@ -52,7 +54,6 @@ void XmlExporter::to_xml(const fs::path& output_path, std::vector<Object>& objec
 			intr_olink->SetAttribute("toId", obj_b.get_id()->c_str());
 			root->InsertEndChild(intr_olink);
 		}
-
 	}
 
 	doc.InsertFirstChild(root);
